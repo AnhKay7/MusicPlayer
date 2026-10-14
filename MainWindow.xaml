@@ -7,7 +7,8 @@
         mc:Ignorable="d"
         Background="Black"
         Foreground="White"
-        Title="MainWindow" Height="630" Width="1120">
+        Title="MainWindow" Height="630" Width="1120"
+        Loaded="Window_Loaded">
     <Window.Resources>
         <Style TargetType="Button">
             <Setter Property="Foreground" Value="White"></Setter>
@@ -23,6 +24,9 @@
             <Setter Property="Foreground" Value="White"></Setter>
             <Setter Property="VerticalContentAlignment" Value="Center"></Setter>
             <Setter Property="CaretBrush" Value="White"></Setter>
+        </Style>
+        <Style TargetType="ListViewItem">
+            <Setter Property="Foreground" Value="White"></Setter>
         </Style>
     </Window.Resources>
     <Grid>
@@ -65,7 +69,47 @@
                 </StackPanel>
             </Border>
 
-            <Border Grid.Column="1" Background="#181818" CornerRadius="10" Margin="8, 0">
+            <Border Grid.Column="1" Background="#181818" CornerRadius="10" Margin="8, 0" Padding="8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"></RowDefinition>
+                        <RowDefinition Height="*"></RowDefinition>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" Margin="6,0,6,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"></ColumnDefinition>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="80"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Song name"></TextBlock>
+                        <TextBlock Grid.Column="1" Text="Artist"></TextBlock>
+                        <TextBlock Grid.Column="2" Text="Date added"></TextBlock>
+                        <TextBlock Grid.Column="3" Text="⌚"></TextBlock>
+                    </Grid>
+                    <ListView x:Name="lvSongs" MouseDoubleClick="lvSongs_MouseDoubleClick" Grid.Row="1" 
+                              ItemsSource="{Binding Songs}"
+                              Background="Transparent" BorderThickness="0" Foreground="White"
+                              HorizontalContentAlignment="Stretch">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"></ColumnDefinition>
+                                        <ColumnDefinition Width="*"></ColumnDefinition>
+                                        <ColumnDefinition Width="*"></ColumnDefinition>
+                                        <ColumnDefinition Width="80"></ColumnDefinition>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{Binding Title}"></TextBlock>
+                                    <TextBlock Grid.Column="1" Text="{Binding Artist}"></TextBlock>
+                                    <TextBlock Grid.Column="2" Text="{Binding DateAdded}"></TextBlock>
+                                    <TextBlock Grid.Column="3" Text="{Binding Duration}"></TextBlock>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </Grid>
             </Border>
         </Grid>
         

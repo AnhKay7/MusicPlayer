@@ -29,7 +29,7 @@ namespace MusicPlayer.Models
                 OnPropertyChanged();
             }
         }
-        private string duration = "";
+        private string duration = "00:00";
         public string Duration
         {
             get { return duration; }
@@ -46,6 +46,16 @@ namespace MusicPlayer.Models
             set
             {
                 filePath = value;
+                OnPropertyChanged();
+            }
+        }
+        private string dateAdded = "";
+        public string DateAdded
+        {
+            get { return dateAdded; }
+            set
+            {
+                dateAdded = value;
                 OnPropertyChanged();
             }
         }
