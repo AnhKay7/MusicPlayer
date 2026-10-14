@@ -22,7 +22,14 @@ namespace MusicPlayer
         {
             InitializeComponent();
 
+            audioPlayer.StateChanged += AudioPlayer_StateChanged;
+
             DataContext = musicLibrary;
+        }
+
+        private void AudioPlayer_StateChanged(object? sender, EventArgs e)
+        {
+            btnPlayStop.Content = audioPlayer.IsPlaying ? "⏸" : "▶";
         }
 
         private MusicLibrary musicLibrary = new MusicLibrary();
@@ -37,7 +44,7 @@ namespace MusicPlayer
                 return;
             }
 
-            MessageBox.Show($"Tim duoc {numberOfAddedSong} bai");
+            //MessageBox.Show($"Tim duoc {numberOfAddedSong} bai");
         }
         private void lvSongs_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
@@ -48,7 +55,16 @@ namespace MusicPlayer
                     MessageBox.Show("Ban nhac nay khong con ton tai!!!");
                     return;
                 }
+                spNowPlaying.DataContext = song;
             }
+        }
+
+        private void butPlayStop_Click(object sender, RoutedEventArgs e)
+        {
+            if (audioPlayer.IsPlaying)
+                audioPlayer.Pause();
+            else
+                audioPlayer.Resume();
         }
     }
 }

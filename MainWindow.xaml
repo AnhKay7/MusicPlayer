@@ -102,9 +102,9 @@
                                         <ColumnDefinition Width="80"></ColumnDefinition>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Text="{Binding Title}"></TextBlock>
-                                    <TextBlock Grid.Column="1" Text="{Binding Artist}"></TextBlock>
-                                    <TextBlock Grid.Column="2" Text="{Binding DateAdded}"></TextBlock>
-                                    <TextBlock Grid.Column="3" Text="{Binding Duration}"></TextBlock>
+                                    <TextBlock Grid.Column="1" Text="{Binding Artists}"></TextBlock>
+                                    <TextBlock Grid.Column="2" Text="{Binding DateAdded, StringFormat=dd/MM/yyyy}"></TextBlock>
+                                    <TextBlock Grid.Column="3" Text="{Binding Duration, StringFormat=m\\:ss}"></TextBlock>
                                 </Grid>
                             </DataTemplate>
                         </ListView.ItemTemplate>
@@ -122,9 +122,11 @@
                     <ColumnDefinition Width="*"></ColumnDefinition>
                 </Grid.ColumnDefinitions>
 
-                <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="Ten bai hat o day" FontWeight="Bold" FontSize="18"></TextBlock>
-                    <TextBlock Text="Ten ca si o day" Foreground="Gray" FontSize="14"></TextBlock>
+                <StackPanel x:Name="spNowPlaying" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Title, FallbackValue='Have not played any songs yet'}" 
+                               FontWeight="Bold" FontSize="18" TextTrimming="CharacterEllipsis"></TextBlock>
+                    <TextBlock Text="{Binding Artists, FallbackValue='No artist'}" 
+                               Foreground="Gray" FontSize="14" TextTrimming="CharacterEllipsis"></TextBlock>
                 </StackPanel>
 
                 <Grid Grid.Column="1">
@@ -135,7 +137,7 @@
 
                     <StackPanel Grid.Row="0" HorizontalAlignment="Center" Orientation="Horizontal">
                         <Button Content="⏮" FontSize="20"></Button>
-                        <Button Content="▶" FontSize="25"></Button>
+                        <Button x:Name="btnPlayStop" Content="▶" FontSize="25" Click="butPlayStop_Click"></Button>
                         <Button Content="⏭" FontSize="20"></Button>
                     </StackPanel>
                     <Grid Grid.Row="1" >

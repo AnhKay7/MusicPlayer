@@ -19,18 +19,18 @@ namespace MusicPlayer.Models
                 OnPropertyChanged();
             }
         }
-        private string artist = "Unknown";
-        public string Artist
+        private string artists = "Unknown";
+        public string Artists
         {
-            get { return artist; }
+            get { return artists; }
             set
             {
-                artist = value;
+                artists = value;
                 OnPropertyChanged();
             }
         }
-        private string duration = "00:00";
-        public string Duration
+        private TimeSpan duration;
+        public TimeSpan Duration
         {
             get { return duration; }
             set
@@ -49,8 +49,8 @@ namespace MusicPlayer.Models
                 OnPropertyChanged();
             }
         }
-        private string dateAdded = "";
-        public string DateAdded
+        private DateTime dateAdded = DateTime.Today;
+        public DateTime DateAdded
         {
             get { return dateAdded; }
             set
