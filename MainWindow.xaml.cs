@@ -30,7 +30,18 @@ namespace MusicPlayer
 
             DataContext = musicLibrary;
         }
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
+            if (!musicLibrary.LoadFromFolder(folderPath, out int numberOfAddedSong))
+            {
+                MessageBox.Show("Khong tim thay thuc muc nhac!!!");
+                return;
+            }
 
+            //MessageBox.Show($"Tim duoc {numberOfAddedSong} bai");
+        }
+        #region OutSide Event Handle
         private void AudioPlayer_StateChanged(object? sender, EventArgs e)
         {
             btnPlayStop.Content = audioPlayer.IsPlaying ? "⏸" : "▶";
@@ -46,34 +57,61 @@ namespace MusicPlayer
             if (!isDragging)
                 sldProgress.Value = position.TotalSeconds;
         }
+        #endregion
 
+        #region Component & Object
         private MusicLibrary musicLibrary = new MusicLibrary();
-
         private AudioPlayer audioPlayer = new AudioPlayer();
         private DispatcherTimer timer = new DispatcherTimer();
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+        #endregion
+
+        #region Runtime Variable
+        private Song? currentSong;
+        #endregion
+
+        #region Play Song
+        private void PlaySong(Song song)
         {
-            string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
-            if (!musicLibrary.LoadFromFolder(folderPath, out int numberOfAddedSong))
+            if (!audioPlayer.Play(song.FilePath))
             {
-                MessageBox.Show("Khong tim thay thuc muc nhac!!!");
+                MessageBox.Show("Ban nhac nay khong con ton tai!!!");
                 return;
             }
-
-            //MessageBox.Show($"Tim duoc {numberOfAddedSong} bai");
+            bdPlayingBar.DataContext = song;
+            currentSong = song;
+        }
+        private void PlayNextSong()
+        {
+            if (currentSong == null)
+                return;
+            int nextSongIdx = (musicLibrary.Songs.IndexOf(currentSong) + 1) % musicLibrary.Songs.Count;
+            PlaySong(musicLibrary.Songs[nextSongIdx]);
+        }
+        private void PlayPreviousSong()
+        {
+            if (currentSong == null)
+                return;
+            int previousSongIdx = (musicLibrary.Songs.IndexOf(currentSong) - 1 + musicLibrary.Songs.Count) % musicLibrary.Songs.Count;
+            PlaySong(musicLibrary.Songs[previousSongIdx]);
         }
         private void lvSongs_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (lvSongs.SelectedItem is Song song)
             {
-                if (!audioPlayer.Play(song.FilePath))
-                {
-                    MessageBox.Show("Ban nhac nay khong con ton tai!!!");
-                    return;
-                }
-                bdPlayingBar.DataContext = song;
+                PlaySong(song);
             }
         }
+        private void btnNextSong_Click(object sender, RoutedEventArgs e)
+        {
+            PlayNextSong();
+        }
+        private void btnPreviousSong_Click(object sender, RoutedEventArgs e)
+        {
+            PlayPreviousSong();
+        }
+        #endregion
+
+        #region PlayingBar
 
         private void butPlayStop_Click(object sender, RoutedEventArgs e)
         {
@@ -85,15 +123,6 @@ namespace MusicPlayer
                 audioPlayer.Resume();
         }
         private bool isDragging = false;
-        private void sldProgress_DragCompleted(object sender, System.Windows.Controls.Primitives.DragCompletedEventArgs e)
-        {
-            isDragging = false;
-        }
-
-        private void sldProgress_DragStarted(object sender, System.Windows.Controls.Primitives.DragStartedEventArgs e)
-        {
-            isDragging = true;
-        }
 
         private void sldProgress_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
@@ -102,7 +131,14 @@ namespace MusicPlayer
 
         private void sldProgress_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
+            isDragging = false;
             audioPlayer.SeekCurrentPosition(TimeSpan.FromSeconds(sldProgress.Value));
         }
+
+        private void sldProgress_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            isDragging = true;
+        }
+        #endregion
     }
 }

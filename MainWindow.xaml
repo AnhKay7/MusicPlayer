@@ -136,9 +136,9 @@
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Row="0" HorizontalAlignment="Center" Orientation="Horizontal">
-                        <Button Content="⏮" FontSize="20"></Button>
+                        <Button x:Name="btnPreviousSong" Content="⏮" FontSize="20" Click="btnPreviousSong_Click"></Button>
                         <Button x:Name="btnPlayStop" Content="▶" FontSize="25" Click="butPlayStop_Click"></Button>
-                        <Button Content="⏭" FontSize="20"></Button>
+                        <Button x:Name="btnNextSong" Content="⏭" FontSize="20" Click="btnNextSong_Click"></Button>
                     </StackPanel>
                     <Grid Grid.Row="1" >
                         <Grid.ColumnDefinitions>
@@ -150,10 +150,9 @@
                         <Slider x:Name="sldProgress" 
                                 Grid.Column="1" Minimum="0" 
                                 Maximum="{Binding Duration.TotalSeconds, FallbackValue=100}"
-                                Thumb.DragCompleted="sldProgress_DragCompleted"
-                                Thumb.DragStarted="sldProgress_DragStarted"
                                 ValueChanged="sldProgress_ValueChanged"
                                 PreviewMouseLeftButtonUp="sldProgress_PreviewMouseLeftButtonUp"
+                                PreviewMouseLeftButtonDown="sldProgress_PreviewMouseLeftButtonDown"
                                 IsMoveToPointEnabled="True"
                                 ></Slider>
                         <TextBlock Text="{Binding Duration, StringFormat=m\\:ss, FallbackValue='0:00'}" Grid.Column="2" VerticalAlignment="Center" Margin="3,0"></TextBlock>
