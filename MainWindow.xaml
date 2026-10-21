@@ -4,10 +4,13 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MusicPlayer"
+        xmlns:customControls="clr-namespace:MusicPlayer.Controls"
         mc:Ignorable="d"
         Background="Black"
         Foreground="White"
-        Title="MainWindow" Height="630" Width="1120"
+        Title="MainWindow" 
+        Height="630" Width="1120"
+        MinWidth="800"
         Loaded="Window_Loaded">
     <Window.Resources>
         <Style TargetType="Button">
@@ -47,8 +50,9 @@
         <!--Library & Content-->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" MinWidth="200" MaxWidth="220"></ColumnDefinition>
-                <ColumnDefinition Width="*"></ColumnDefinition>
+                <ColumnDefinition Width="1.5*" MinWidth="150" MaxWidth="220"></ColumnDefinition>
+                <ColumnDefinition Width="4*" MinWidth="350"></ColumnDefinition>
+                <ColumnDefinition Width="1.5*" MinWidth="220" MaxWidth="320"></ColumnDefinition>
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0" Background="#121212" CornerRadius="10" Padding="8"  Margin="8, 0, 0, 0">
@@ -111,6 +115,22 @@
                     </ListView>
                 </Grid>
             </Border>
+
+            <Border x:Name="bdNowPlaying" Grid.Column="2" Background="#121212" CornerRadius="10" Margin="0, 0, 8, 0" Padding="8">
+                <StackPanel>
+                    <TextBlock Text="Now playing" FontWeight="Bold" FontSize="16" Margin="0,0,0,12"/>
+                    <Grid Height="{Binding ActualWidth, RelativeSource={RelativeSource self}}">
+                        <Border Background="#2A2A2A" CornerRadius="8">
+                            <Viewbox>
+                                <TextBlock Text="🎵" Margin="10"></TextBlock>
+                            </Viewbox>
+                        </Border>
+                        <Image Source="{Binding Cover}" Stretch="UniformToFill"/>
+                    </Grid>
+                    <TextBlock Text="{Binding Title, FallbackValue='Have not played any songs yet'}" FontWeight="Bold" FontSize="20" TextTrimming="CharacterEllipsis" Margin="0,12,0,0"/>
+                    <TextBlock Text="{Binding Artists, FallbackValue='No artist'}" Foreground="Gray" FontSize="14" TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+            </Border>
         </Grid>
         
         <!--Music play bar-->
@@ -147,14 +167,11 @@
                             <ColumnDefinition Width="Auto"></ColumnDefinition>
                         </Grid.ColumnDefinitions>
                         <TextBlock x:Name="txtCurrentTime" Text="0:00" VerticalAlignment="Center" Margin="3,0"></TextBlock>
-                        <Slider x:Name="sldProgress" 
+                        <customControls:SeekSlider x:Name="sldProgress" 
                                 Grid.Column="1" Minimum="0" 
                                 Maximum="{Binding Duration.TotalSeconds, FallbackValue=100}"
                                 ValueChanged="sldProgress_ValueChanged"
-                                PreviewMouseLeftButtonUp="sldProgress_PreviewMouseLeftButtonUp"
-                                PreviewMouseLeftButtonDown="sldProgress_PreviewMouseLeftButtonDown"
-                                IsMoveToPointEnabled="True"
-                                ></Slider>
+                                ></customControls:SeekSlider>
                         <TextBlock Text="{Binding Duration, StringFormat=m\\:ss, FallbackValue='0:00'}" Grid.Column="2" VerticalAlignment="Center" Margin="3,0"></TextBlock>
                     </Grid>
                 </Grid>
@@ -166,13 +183,12 @@
                         <ColumnDefinition Width="*" MaxWidth="200"></ColumnDefinition>
                     </Grid.ColumnDefinitions>
                     <TextBlock x:Name="txtVolumeIcon" MouseLeftButtonDown="txtVolumeIcon_MouseLeftButtonDown"  Grid.Column="1" Text="🔊" FontSize="25" VerticalAlignment="Center"></TextBlock>
-                    <Slider x:Name="sldVolume" 
+                    <customControls:SeekSlider x:Name="sldVolume" 
                             ValueChanged="sldVolume_ValueChanged" 
                             Grid.Column="2" 
                             Minimum="0" Maximum="1" Value="0.5" 
-                            IsMoveToPointEnabled="True"
                             VerticalAlignment="Center">
-                    </Slider>
+                    </customControls:SeekSlider>
                 </Grid>
             </Grid>
         </Border>

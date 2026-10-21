@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Text;
 using System.Windows;
+using TagLib;
 
 namespace MusicPlayer.Models
 {
@@ -28,21 +29,29 @@ namespace MusicPlayer.Models
                 {
                     continue;
                 }
+
+
                 Song newSong = new Song();
                 newSong.FilePath = x;
                 var tagFile = TagLib.File.Create(x);
+
 
                 newSong.Title = Path.GetFileNameWithoutExtension(x);
                 if (tagFile.Tag.Title != null && tagFile.Tag.Title != "")
                 {
                     newSong.Title = tagFile.Tag.Title;
                 }
-                if (tagFile.Tag.JoinedPerformers != null && tagFile.Tag.JoinedPerformers != "")
+
+
+                if (tagFile.Tag.JoinedPerformers != null && tagFile.Tag.Title != "")
                 {
                     newSong.Artists = tagFile.Tag.JoinedPerformers;
                 }
+
+
                 newSong.Duration = tagFile.Properties.Duration;
-                newSong.DateAdded = File.GetCreationTime(x);
+                newSong.DateAdded = System.IO.File.GetCreationTime(x);
+
 
                 Songs.Add(newSong);
                 numberOfAddedSong++;

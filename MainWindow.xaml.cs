@@ -24,10 +24,10 @@ namespace MusicPlayer
         private AudioPlayer audioPlayer = new AudioPlayer();
         private DispatcherTimer timer = new DispatcherTimer();
 
-        private bool isDragging = false;
         private Song? currentSong;
         private double lastVolumeValue = 0.5;
         #endregion
+
         #region Init
         public MainWindow()
         {
@@ -38,6 +38,8 @@ namespace MusicPlayer
 
             timer.Interval = TimeSpan.FromMilliseconds(500);
             timer.Tick += UpdateProgress;
+
+            sldProgress.UserSeekCompleted += SeekAudioPosition;
 
             DataContext = musicLibrary;
         }
@@ -58,23 +60,16 @@ namespace MusicPlayer
         private void UpdateProgress(object? sender, EventArgs e)
         {
             TimeSpan position = audioPlayer.GetCurrentPosition;
-            if (!isDragging)
+            if (!sldProgress.IsUserDragging)
                 sldProgress.Value = position.TotalSeconds;
+        }
+        private void SeekAudioPosition(object? sender, EventArgs e)
+        {
+            audioPlayer.SeekCurrentPosition(TimeSpan.FromSeconds(sldProgress.Value));
         }
         private void sldProgress_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             txtCurrentTime.Text = TimeSpan.FromSeconds(e.NewValue).ToString(@"m\:ss");
-        }
-
-        private void sldProgress_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
-            isDragging = false;
-            audioPlayer.SeekCurrentPosition(TimeSpan.FromSeconds(sldProgress.Value));
-        }
-
-        private void sldProgress_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            isDragging = true;
         }
         #endregion
 
@@ -92,7 +87,10 @@ namespace MusicPlayer
                 MessageBox.Show("Ban nhac nay khong con ton tai!!!");
                 return;
             }
+            currentSong?.UnloadCoverArt();
+            song.LoadNewCoverArt();
             bdPlayingBar.DataContext = song;
+            bdNowPlaying.DataContext = song;
             currentSong = song;
         }
         private void PlayNextSong()
@@ -179,8 +177,8 @@ namespace MusicPlayer
             {
                 sldVolume.Value = lastVolumeValue;
             }
-            ChangeVolumeIcon();
         }
         #endregion
+
     }
 }
