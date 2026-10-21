@@ -24,6 +24,7 @@ namespace MusicPlayer
             InitializeComponent();
 
             audioPlayer.StateChanged += AudioPlayer_StateChanged;
+            audioPlayer.SongEnded += SongEndedHandle;
 
             timer.Interval = TimeSpan.FromMilliseconds(500);
             timer.Tick += UpdateProgress;
@@ -41,7 +42,7 @@ namespace MusicPlayer
 
             //MessageBox.Show($"Tim duoc {numberOfAddedSong} bai");
         }
-        #region OutSide Event Handle
+        #region Event Handle
         private void AudioPlayer_StateChanged(object? sender, EventArgs e)
         {
             btnPlayStop.Content = audioPlayer.IsPlaying ? "⏸" : "▶";
@@ -70,6 +71,12 @@ namespace MusicPlayer
         #endregion
 
         #region Play Song
+        private bool isAutoPlayEnabled = true;
+        private void SongEndedHandle(object sender, EventArgs e)
+        {
+            if (isAutoPlayEnabled)
+                PlayNextSong();
+        }
         private void PlaySong(Song song)
         {
             if (!audioPlayer.Play(song.FilePath))
