@@ -28,6 +28,11 @@ namespace MusicPlayer.Services
         }
         private bool hasSong = false;
         public bool HasSong => hasSong;
+        public double Volume
+        {
+            get => mediaPlayer.Volume;
+            set => mediaPlayer.Volume = value;
+        }
         private void SetPlaying(bool value)
         {
             isPlaying = value;

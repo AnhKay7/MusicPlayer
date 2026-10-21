@@ -19,6 +19,16 @@ namespace MusicPlayer
     /// </summary>
     public partial class MainWindow : Window
     {
+        #region Fields
+        private MusicLibrary musicLibrary = new MusicLibrary();
+        private AudioPlayer audioPlayer = new AudioPlayer();
+        private DispatcherTimer timer = new DispatcherTimer();
+
+        private bool isDragging = false;
+        private Song? currentSong;
+        private double lastVolumeValue = 0.5;
+        #endregion
+        #region Init
         public MainWindow()
         {
             InitializeComponent();
@@ -42,37 +52,35 @@ namespace MusicPlayer
 
             //MessageBox.Show($"Tim duoc {numberOfAddedSong} bai");
         }
-        #region Event Handle
-        private void AudioPlayer_StateChanged(object? sender, EventArgs e)
-        {
-            btnPlayStop.Content = audioPlayer.IsPlaying ? "⏸" : "▶";
-            if (audioPlayer.IsPlaying)
-                timer.Start();
-            else
-                timer.Stop();
-            UpdateProgress(sender, e);
-        }
+        #endregion
+
+        #region Progress Bar
         private void UpdateProgress(object? sender, EventArgs e)
         {
             TimeSpan position = audioPlayer.GetCurrentPosition;
             if (!isDragging)
                 sldProgress.Value = position.TotalSeconds;
         }
-        #endregion
+        private void sldProgress_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            txtCurrentTime.Text = TimeSpan.FromSeconds(e.NewValue).ToString(@"m\:ss");
+        }
 
-        #region Component & Object
-        private MusicLibrary musicLibrary = new MusicLibrary();
-        private AudioPlayer audioPlayer = new AudioPlayer();
-        private DispatcherTimer timer = new DispatcherTimer();
-        #endregion
+        private void sldProgress_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            isDragging = false;
+            audioPlayer.SeekCurrentPosition(TimeSpan.FromSeconds(sldProgress.Value));
+        }
 
-        #region Runtime Variable
-        private Song? currentSong;
+        private void sldProgress_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            isDragging = true;
+        }
         #endregion
 
         #region Play Song
         private bool isAutoPlayEnabled = true;
-        private void SongEndedHandle(object sender, EventArgs e)
+        private void SongEndedHandle(object? sender, EventArgs e)
         {
             if (isAutoPlayEnabled)
                 PlayNextSong();
@@ -129,22 +137,49 @@ namespace MusicPlayer
             else
                 audioPlayer.Resume();
         }
-        private bool isDragging = false;
-
-        private void sldProgress_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        private void AudioPlayer_StateChanged(object? sender, EventArgs e)
         {
-            txtCurrentTime.Text = TimeSpan.FromSeconds(e.NewValue).ToString(@"m\:ss");
+            btnPlayStop.Content = audioPlayer.IsPlaying ? "⏸" : "▶";
+            if (audioPlayer.IsPlaying)
+                timer.Start();
+            else
+                timer.Stop();
+            UpdateProgress(sender, e);
         }
+        #endregion
 
-        private void sldProgress_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        #region Volume
+        private void ChangeVolumeIcon()
         {
-            isDragging = false;
-            audioPlayer.SeekCurrentPosition(TimeSpan.FromSeconds(sldProgress.Value));
+            double value = sldVolume.Value;
+            if (value == 0)
+            {
+                txtVolumeIcon.Text = "🔇";
+            }
+            else if (value > 0.7)
+            {
+                txtVolumeIcon.Text = "🔊";
+            }
+            else
+                txtVolumeIcon.Text = "🔉";
         }
-
-        private void sldProgress_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void sldVolume_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            isDragging = true;
+            audioPlayer.Volume = e.NewValue;
+            ChangeVolumeIcon();
+        }
+        private void txtVolumeIcon_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sldVolume.Value > 0)
+            {
+                lastVolumeValue = sldVolume.Value;
+                sldVolume.Value = 0;
+            }
+            else
+            {
+                sldVolume.Value = lastVolumeValue;
+            }
+            ChangeVolumeIcon();
         }
         #endregion
     }

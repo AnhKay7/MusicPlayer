@@ -165,8 +165,14 @@
                         <ColumnDefinition Width="Auto"></ColumnDefinition>
                         <ColumnDefinition Width="*" MaxWidth="200"></ColumnDefinition>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="1" Text="🔊" FontSize="25" VerticalAlignment="Center"></TextBlock>
-                    <Slider Grid.Column="2" Minimum="0" Maximum="1" Value="0.5" VerticalAlignment="Center"></Slider>
+                    <TextBlock x:Name="txtVolumeIcon" MouseLeftButtonDown="txtVolumeIcon_MouseLeftButtonDown"  Grid.Column="1" Text="🔊" FontSize="25" VerticalAlignment="Center"></TextBlock>
+                    <Slider x:Name="sldVolume" 
+                            ValueChanged="sldVolume_ValueChanged" 
+                            Grid.Column="2" 
+                            Minimum="0" Maximum="1" Value="0.5" 
+                            IsMoveToPointEnabled="True"
+                            VerticalAlignment="Center">
+                    </Slider>
                 </Grid>
             </Grid>
         </Border>
