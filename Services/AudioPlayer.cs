@@ -18,6 +18,7 @@ namespace MusicPlayer.Services
 
         private bool isPlaying = false;
         public bool IsPlaying => isPlaying;
+        public event EventHandler? SongEnded;
         public TimeSpan GetCurrentPosition => mediaPlayer.Position;
         public void SeekCurrentPosition(TimeSpan timeSpan)
         {
@@ -27,6 +28,11 @@ namespace MusicPlayer.Services
         }
         private bool hasSong = false;
         public bool HasSong => hasSong;
+        public double Volume
+        {
+            get => mediaPlayer.Volume;
+            set => mediaPlayer.Volume = value;
+        }
         private void SetPlaying(bool value)
         {
             isPlaying = value;
@@ -63,6 +69,7 @@ namespace MusicPlayer.Services
             mediaPlayer.Position = TimeSpan.Zero;
             mediaPlayer.Stop();
             SetPlaying(false);
+            SongEnded?.Invoke(this, EventArgs.Empty);
         }
     }
 }
