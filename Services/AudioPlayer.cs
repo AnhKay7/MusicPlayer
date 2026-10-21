@@ -18,6 +18,13 @@ namespace MusicPlayer.Services
 
         private bool isPlaying = false;
         public bool IsPlaying => isPlaying;
+        public TimeSpan GetCurrentPosition => mediaPlayer.Position;
+        public void SeekCurrentPosition(TimeSpan timeSpan)
+        {
+            if (!hasSong)
+                return;
+            mediaPlayer.Position = timeSpan;
+        }
         private bool hasSong = false;
         public bool HasSong => hasSong;
         private void SetPlaying(bool value)

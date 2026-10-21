@@ -114,7 +114,7 @@
         </Grid>
         
         <!--Music play bar-->
-        <Border Grid.Row="2" Background="#000000" Padding="8">
+        <Border x:Name="bdPlayingBar" Grid.Row="2" Background="#000000" Padding="8">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"></ColumnDefinition>
@@ -122,7 +122,7 @@
                     <ColumnDefinition Width="*"></ColumnDefinition>
                 </Grid.ColumnDefinitions>
 
-                <StackPanel x:Name="spNowPlaying" VerticalAlignment="Center">
+                <StackPanel VerticalAlignment="Center">
                     <TextBlock Text="{Binding Title, FallbackValue='Have not played any songs yet'}" 
                                FontWeight="Bold" FontSize="18" TextTrimming="CharacterEllipsis"></TextBlock>
                     <TextBlock Text="{Binding Artists, FallbackValue='No artist'}" 
@@ -146,9 +146,17 @@
                             <ColumnDefinition Width="*"></ColumnDefinition>
                             <ColumnDefinition Width="Auto"></ColumnDefinition>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="00:00" VerticalAlignment="Center" Margin="3,0"></TextBlock>
-                        <Slider Grid.Column="1" Minimum="0" Maximum="100"></Slider>
-                        <TextBlock Text="00:00" Grid.Column="2" VerticalAlignment="Center" Margin="3,0"></TextBlock>
+                        <TextBlock x:Name="txtCurrentTime" Text="0:00" VerticalAlignment="Center" Margin="3,0"></TextBlock>
+                        <Slider x:Name="sldProgress" 
+                                Grid.Column="1" Minimum="0" 
+                                Maximum="{Binding Duration.TotalSeconds, FallbackValue=100}"
+                                Thumb.DragCompleted="sldProgress_DragCompleted"
+                                Thumb.DragStarted="sldProgress_DragStarted"
+                                ValueChanged="sldProgress_ValueChanged"
+                                PreviewMouseLeftButtonUp="sldProgress_PreviewMouseLeftButtonUp"
+                                IsMoveToPointEnabled="True"
+                                ></Slider>
+                        <TextBlock Text="{Binding Duration, StringFormat=m\\:ss, FallbackValue='0:00'}" Grid.Column="2" VerticalAlignment="Center" Margin="3,0"></TextBlock>
                     </Grid>
                 </Grid>
 

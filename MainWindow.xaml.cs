@@ -10,6 +10,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
+using System.Windows.Threading;
 
 namespace MusicPlayer
 {
@@ -24,17 +25,32 @@ namespace MusicPlayer
 
             audioPlayer.StateChanged += AudioPlayer_StateChanged;
 
+            timer.Interval = TimeSpan.FromMilliseconds(500);
+            timer.Tick += UpdateProgress;
+
             DataContext = musicLibrary;
         }
 
         private void AudioPlayer_StateChanged(object? sender, EventArgs e)
         {
             btnPlayStop.Content = audioPlayer.IsPlaying ? "⏸" : "▶";
+            if (audioPlayer.IsPlaying)
+                timer.Start();
+            else
+                timer.Stop();
+            UpdateProgress(sender, e);
+        }
+        private void UpdateProgress(object? sender, EventArgs e)
+        {
+            TimeSpan position = audioPlayer.GetCurrentPosition;
+            if (!isDraging)
+                sldProgress.Value = position.TotalSeconds;
         }
 
         private MusicLibrary musicLibrary = new MusicLibrary();
 
         private AudioPlayer audioPlayer = new AudioPlayer();
+        private DispatcherTimer timer = new DispatcherTimer();
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
@@ -55,16 +71,39 @@ namespace MusicPlayer
                     MessageBox.Show("Ban nhac nay khong con ton tai!!!");
                     return;
                 }
-                spNowPlaying.DataContext = song;
+                bdPlayingBar.DataContext = song;
             }
         }
 
         private void butPlayStop_Click(object sender, RoutedEventArgs e)
         {
+            if (!audioPlayer.HasSong)
+                return;
             if (audioPlayer.IsPlaying)
                 audioPlayer.Pause();
             else
                 audioPlayer.Resume();
+        }
+        private bool isDraging = false;
+        private void sldProgress_DragCompleted(object sender, System.Windows.Controls.Primitives.DragCompletedEventArgs e)
+        {
+            audioPlayer.SeekCurrentPosition(TimeSpan.FromSeconds(sldProgress.Value));
+            isDraging = false;
+        }
+
+        private void sldProgress_DragStarted(object sender, System.Windows.Controls.Primitives.DragStartedEventArgs e)
+        {
+            isDraging = true;
+        }
+
+        private void sldProgress_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            txtCurrentTime.Text = TimeSpan.FromSeconds(e.NewValue).ToString(@"m\:ss");
+        }
+
+        private void sldProgress_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            audioPlayer.SeekCurrentPosition(TimeSpan.FromSeconds(sldProgress.Value));
         }
     }
 }
