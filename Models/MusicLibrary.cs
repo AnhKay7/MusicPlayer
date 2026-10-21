@@ -37,7 +37,7 @@ namespace MusicPlayer.Models
                 {
                     newSong.Title = tagFile.Tag.Title;
                 }
-                if (tagFile.Tag.JoinedPerformers != null && tagFile.Tag.Title != "")
+                if (tagFile.Tag.JoinedPerformers != null && tagFile.Tag.JoinedPerformers != "")
                 {
                     newSong.Artists = tagFile.Tag.JoinedPerformers;
                 }

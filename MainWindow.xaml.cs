@@ -43,7 +43,7 @@ namespace MusicPlayer
         private void UpdateProgress(object? sender, EventArgs e)
         {
             TimeSpan position = audioPlayer.GetCurrentPosition;
-            if (!isDraging)
+            if (!isDragging)
                 sldProgress.Value = position.TotalSeconds;
         }
 
@@ -84,16 +84,15 @@ namespace MusicPlayer
             else
                 audioPlayer.Resume();
         }
-        private bool isDraging = false;
+        private bool isDragging = false;
         private void sldProgress_DragCompleted(object sender, System.Windows.Controls.Primitives.DragCompletedEventArgs e)
         {
-            audioPlayer.SeekCurrentPosition(TimeSpan.FromSeconds(sldProgress.Value));
-            isDraging = false;
+            isDragging = false;
         }
 
         private void sldProgress_DragStarted(object sender, System.Windows.Controls.Primitives.DragStartedEventArgs e)
         {
-            isDraging = true;
+            isDragging = true;
         }
 
         private void sldProgress_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
