@@ -23,7 +23,7 @@ namespace MusicPlayer
         private MusicLibrary musicLibrary = new MusicLibrary();
         private AudioPlayer audioPlayer = new AudioPlayer();
         private DispatcherTimer timer = new DispatcherTimer();
-
+        private PlayQueue playQueue = new PlayQueue();
         private Song? currentSong;
         private double lastVolumeValue = 0.5;
         #endregion
@@ -97,20 +97,25 @@ namespace MusicPlayer
         {
             if (currentSong == null)
                 return;
-            int nextSongIdx = (musicLibrary.Songs.IndexOf(currentSong) + 1) % musicLibrary.Songs.Count;
-            PlaySong(musicLibrary.Songs[nextSongIdx]);
+            playQueue.MoveNext();
+            Song? nextSong = playQueue.Current;
+            if (nextSong != null)
+                PlaySong(nextSong);
         }
         private void PlayPreviousSong()
         {
             if (currentSong == null)
                 return;
-            int previousSongIdx = (musicLibrary.Songs.IndexOf(currentSong) - 1 + musicLibrary.Songs.Count) % musicLibrary.Songs.Count;
-            PlaySong(musicLibrary.Songs[previousSongIdx]);
+            playQueue.MovePrevious();
+            Song? previousSong = playQueue.Current;
+            if (previousSong != null)
+                PlaySong(previousSong);
         }
         private void lvSongs_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (lvSongs.SelectedItem is Song song)
             {
+                playQueue.Load(musicLibrary.Songs, song);
                 PlaySong(song);
             }
         }

@@ -95,7 +95,8 @@
                     <ListView x:Name="lvSongs" MouseDoubleClick="lvSongs_MouseDoubleClick" Grid.Row="1" 
                               ItemsSource="{Binding Songs}"
                               Background="Transparent" BorderThickness="0" Foreground="White"
-                              HorizontalContentAlignment="Stretch">
+                              HorizontalContentAlignment="Stretch"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListView.ItemTemplate>
                             <DataTemplate>
                                 <Grid>
@@ -105,10 +106,10 @@
                                         <ColumnDefinition Width="*"></ColumnDefinition>
                                         <ColumnDefinition Width="80"></ColumnDefinition>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="{Binding Title}"></TextBlock>
-                                    <TextBlock Grid.Column="1" Text="{Binding Artists}"></TextBlock>
-                                    <TextBlock Grid.Column="2" Text="{Binding DateAdded, StringFormat=dd/MM/yyyy}"></TextBlock>
-                                    <TextBlock Grid.Column="3" Text="{Binding Duration, StringFormat=m\\:ss}"></TextBlock>
+                                    <TextBlock Grid.Column="0" Text="{Binding Title}" TextTrimming="CharacterEllipsis"></TextBlock>
+                                    <TextBlock Grid.Column="1" Text="{Binding Artists}" TextTrimming="CharacterEllipsis"></TextBlock>
+                                    <TextBlock Grid.Column="2" Text="{Binding DateAdded, StringFormat=dd/MM/yyyy}" TextTrimming="CharacterEllipsis"></TextBlock>
+                                    <TextBlock Grid.Column="3" Text="{Binding Duration, StringFormat=m\\:ss}" TextTrimming="CharacterEllipsis"></TextBlock>
                                 </Grid>
                             </DataTemplate>
                         </ListView.ItemTemplate>
