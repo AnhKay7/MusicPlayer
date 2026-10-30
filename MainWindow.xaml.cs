@@ -41,6 +41,9 @@ namespace MusicPlayer
 
             sldProgress.UserSeekCompleted += SeekAudioPosition;
 
+            btnShuffle.DataContext = playQueue;
+            btnRepeat.DataContext = playQueue;
+
             DataContext = musicLibrary;
         }
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -77,8 +80,21 @@ namespace MusicPlayer
         private bool isAutoPlayEnabled = true;
         private void SongEndedHandle(object? sender, EventArgs e)
         {
-            if (isAutoPlayEnabled)
-                PlayNextSong();
+            switch (playQueue.CurrentRepeatMode)
+            {
+                case PlayQueue.RepeatMode.Off:
+                    if (!playQueue.IsListFinished)
+                        PlayNextSong();
+                    break;
+                case PlayQueue.RepeatMode.All:
+                    PlayNextSong();
+                    break;
+                default:
+                    if (currentSong != null)
+                        PlaySong(currentSong);
+                    break;
+            }
+
         }
         private void PlaySong(Song song)
         {
@@ -185,5 +201,17 @@ namespace MusicPlayer
         }
         #endregion
 
+        private void btnShuffle_Click(object sender, RoutedEventArgs e)
+        {
+            if (playQueue.IsShuffleEnable)
+                playQueue.TurnOffShuffle();
+            else
+                playQueue.TurnOnShuffle();
+        }
+
+        private void btnRepeat_Click(object sender, RoutedEventArgs e)
+        {
+            playQueue.ChangeRepeatMode();
+        }
     }
 }

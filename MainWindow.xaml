@@ -157,9 +157,36 @@
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Row="0" HorizontalAlignment="Center" Orientation="Horizontal">
+                        <Button x:Name="btnShuffle" Content="🔀" FontSize="20" Click="btnShuffle_Click">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsShuffleEnable}" Value="True">
+                                            <Setter Property="Foreground" Value="LightGreen"></Setter>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
                         <Button x:Name="btnPreviousSong" Content="⏮" FontSize="20" Click="btnPreviousSong_Click"></Button>
                         <Button x:Name="btnPlayStop" Content="▶" FontSize="25" Click="butPlayStop_Click"></Button>
                         <Button x:Name="btnNextSong" Content="⏭" FontSize="20" Click="btnNextSong_Click"></Button>
+                        <Button x:Name="btnRepeat" FontSize="20" Click="btnRepeat_Click">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                    <Setter Property="Content" Value="🔁"></Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding CurrentRepeatMode}" Value="All">
+                                            <Setter Property="Foreground" Value="LightGreen"></Setter>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding CurrentRepeatMode}" Value="One">
+                                            <Setter Property="Content" Value="🔂"></Setter>
+                                            <Setter Property="Foreground" Value="LightGreen"></Setter>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
                     </StackPanel>
                     <Grid Grid.Row="1" >
                         <Grid.ColumnDefinitions>
