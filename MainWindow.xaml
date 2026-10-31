@@ -95,7 +95,8 @@
                     <ListView x:Name="lvSongs" MouseDoubleClick="lvSongs_MouseDoubleClick" Grid.Row="1" 
                               ItemsSource="{Binding Songs}"
                               Background="Transparent" BorderThickness="0" Foreground="White"
-                              HorizontalContentAlignment="Stretch">
+                              HorizontalContentAlignment="Stretch"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListView.ItemTemplate>
                             <DataTemplate>
                                 <Grid>
@@ -105,10 +106,10 @@
                                         <ColumnDefinition Width="*"></ColumnDefinition>
                                         <ColumnDefinition Width="80"></ColumnDefinition>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="{Binding Title}"></TextBlock>
-                                    <TextBlock Grid.Column="1" Text="{Binding Artists}"></TextBlock>
-                                    <TextBlock Grid.Column="2" Text="{Binding DateAdded, StringFormat=dd/MM/yyyy}"></TextBlock>
-                                    <TextBlock Grid.Column="3" Text="{Binding Duration, StringFormat=m\\:ss}"></TextBlock>
+                                    <TextBlock Grid.Column="0" Text="{Binding Title}" TextTrimming="CharacterEllipsis"></TextBlock>
+                                    <TextBlock Grid.Column="1" Text="{Binding Artists}" TextTrimming="CharacterEllipsis"></TextBlock>
+                                    <TextBlock Grid.Column="2" Text="{Binding DateAdded, StringFormat=dd/MM/yyyy}" TextTrimming="CharacterEllipsis"></TextBlock>
+                                    <TextBlock Grid.Column="3" Text="{Binding Duration, StringFormat=m\\:ss}" TextTrimming="CharacterEllipsis"></TextBlock>
                                 </Grid>
                             </DataTemplate>
                         </ListView.ItemTemplate>
@@ -156,9 +157,36 @@
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Row="0" HorizontalAlignment="Center" Orientation="Horizontal">
+                        <Button x:Name="btnShuffle" Content="🔀" FontSize="20" Click="btnShuffle_Click">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsShuffleEnable}" Value="True">
+                                            <Setter Property="Foreground" Value="LightGreen"></Setter>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
                         <Button x:Name="btnPreviousSong" Content="⏮" FontSize="20" Click="btnPreviousSong_Click"></Button>
                         <Button x:Name="btnPlayStop" Content="▶" FontSize="25" Click="butPlayStop_Click"></Button>
                         <Button x:Name="btnNextSong" Content="⏭" FontSize="20" Click="btnNextSong_Click"></Button>
+                        <Button x:Name="btnRepeat" FontSize="20" Click="btnRepeat_Click">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                    <Setter Property="Content" Value="🔁"></Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding CurrentRepeatMode}" Value="All">
+                                            <Setter Property="Foreground" Value="LightGreen"></Setter>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding CurrentRepeatMode}" Value="One">
+                                            <Setter Property="Content" Value="🔂"></Setter>
+                                            <Setter Property="Foreground" Value="LightGreen"></Setter>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
                     </StackPanel>
                     <Grid Grid.Row="1" >
                         <Grid.ColumnDefinitions>

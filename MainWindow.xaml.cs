@@ -23,7 +23,7 @@ namespace MusicPlayer
         private MusicLibrary musicLibrary = new MusicLibrary();
         private AudioPlayer audioPlayer = new AudioPlayer();
         private DispatcherTimer timer = new DispatcherTimer();
-
+        private PlayQueue playQueue = new PlayQueue();
         private Song? currentSong;
         private double lastVolumeValue = 0.5;
         #endregion
@@ -41,10 +41,16 @@ namespace MusicPlayer
 
             sldProgress.UserSeekCompleted += SeekAudioPosition;
 
+            btnShuffle.DataContext = playQueue;
+            btnRepeat.DataContext = playQueue;
+
             DataContext = musicLibrary;
         }
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            musicLibrary.LoadFromDatabase();
+
+            //Will change to selected folder and target scan
             string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
             if (!musicLibrary.LoadFromFolder(folderPath, out int numberOfAddedSong))
             {
@@ -52,6 +58,8 @@ namespace MusicPlayer
                 return;
             }
 
+            //libraryDatabase.GetAllSongs();
+            //libraryDatabase.InsertSong(musicLibrary.Songs[0]);
             //MessageBox.Show($"Tim duoc {numberOfAddedSong} bai");
         }
         #endregion
@@ -77,8 +85,21 @@ namespace MusicPlayer
         private bool isAutoPlayEnabled = true;
         private void SongEndedHandle(object? sender, EventArgs e)
         {
-            if (isAutoPlayEnabled)
-                PlayNextSong();
+            switch (playQueue.CurrentRepeatMode)
+            {
+                case PlayQueue.RepeatMode.Off:
+                    if (!playQueue.IsListFinished)
+                        PlayNextSong();
+                    break;
+                case PlayQueue.RepeatMode.All:
+                    PlayNextSong();
+                    break;
+                default:
+                    if (currentSong != null)
+                        PlaySong(currentSong);
+                    break;
+            }
+
         }
         private void PlaySong(Song song)
         {
@@ -97,20 +118,25 @@ namespace MusicPlayer
         {
             if (currentSong == null)
                 return;
-            int nextSongIdx = (musicLibrary.Songs.IndexOf(currentSong) + 1) % musicLibrary.Songs.Count;
-            PlaySong(musicLibrary.Songs[nextSongIdx]);
+            playQueue.MoveNext();
+            Song? nextSong = playQueue.Current;
+            if (nextSong != null)
+                PlaySong(nextSong);
         }
         private void PlayPreviousSong()
         {
             if (currentSong == null)
                 return;
-            int previousSongIdx = (musicLibrary.Songs.IndexOf(currentSong) - 1 + musicLibrary.Songs.Count) % musicLibrary.Songs.Count;
-            PlaySong(musicLibrary.Songs[previousSongIdx]);
+            playQueue.MovePrevious();
+            Song? previousSong = playQueue.Current;
+            if (previousSong != null)
+                PlaySong(previousSong);
         }
         private void lvSongs_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (lvSongs.SelectedItem is Song song)
             {
+                playQueue.Load(musicLibrary.Songs, song);
                 PlaySong(song);
             }
         }
@@ -180,5 +206,17 @@ namespace MusicPlayer
         }
         #endregion
 
+        private void btnShuffle_Click(object sender, RoutedEventArgs e)
+        {
+            if (playQueue.IsShuffleEnable)
+                playQueue.TurnOffShuffle();
+            else
+                playQueue.TurnOnShuffle();
+        }
+
+        private void btnRepeat_Click(object sender, RoutedEventArgs e)
+        {
+            playQueue.ChangeRepeatMode();
+        }
     }
 }
