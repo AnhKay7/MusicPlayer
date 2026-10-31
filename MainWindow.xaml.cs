@@ -48,6 +48,9 @@ namespace MusicPlayer
         }
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            musicLibrary.LoadFromDatabase();
+
+            //Will change to selected folder and target scan
             string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
             if (!musicLibrary.LoadFromFolder(folderPath, out int numberOfAddedSong))
             {
@@ -55,6 +58,8 @@ namespace MusicPlayer
                 return;
             }
 
+            //libraryDatabase.GetAllSongs();
+            //libraryDatabase.InsertSong(musicLibrary.Songs[0]);
             //MessageBox.Show($"Tim duoc {numberOfAddedSong} bai");
         }
         #endregion

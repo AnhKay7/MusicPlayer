@@ -1,6 +1,8 @@
-﻿using System;
+﻿using MusicPlayer.Services;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows;
@@ -10,8 +12,18 @@ namespace MusicPlayer.Models
 {
     class MusicLibrary
     {
+        private LibraryDatabase libraryDatabase = new LibraryDatabase();
         public ObservableCollection<Song> Songs { get; } = new ObservableCollection<Song>();
 
+        public void LoadFromDatabase()
+        {
+            libraryDatabase.CreateTables();
+            List<Song> databaseSong = libraryDatabase.GetAllSongs();
+            foreach (Song song in databaseSong)
+            {
+                Songs.Add(song);
+            }
+        }
         public bool LoadFromFolder(string musicPath, out int numberOfAddedSong)
         {
             numberOfAddedSong = 0;
@@ -30,31 +42,46 @@ namespace MusicPlayer.Models
                     continue;
                 }
 
-
-                Song newSong = new Song();
-                newSong.FilePath = x;
-                var tagFile = TagLib.File.Create(x);
-
-
-                newSong.Title = Path.GetFileNameWithoutExtension(x);
-                if (tagFile.Tag.Title != null && tagFile.Tag.Title != "")
+                try
                 {
-                    newSong.Title = tagFile.Tag.Title;
+                    using var tagFile = TagLib.File.Create(x);
+
+                    Song newSong = new Song();
+                    newSong.FilePath = x;
+
+                    newSong.Title = Path.GetFileNameWithoutExtension(x);
+                    if (tagFile.Tag.Title != null && tagFile.Tag.Title != "")
+                    {
+                        newSong.Title = tagFile.Tag.Title;
+                    }
+
+                    if (tagFile.Tag.JoinedPerformers != null && tagFile.Tag.JoinedPerformers != "")
+                    {
+                        newSong.Artists = tagFile.Tag.JoinedPerformers;
+                    }
+
+                    if (tagFile.Tag.Album != null && tagFile.Tag.Album != "")
+                    {
+                        newSong.Album = tagFile.Tag.Album;
+                    }
+
+                    FileInfo fileInfo = new System.IO.FileInfo(x);
+                    newSong.FileSize = fileInfo.Length;
+                    newSong.LastModified = fileInfo.LastWriteTime;
+
+                    newSong.Duration = tagFile.Properties.Duration;
+                    newSong.DateAdded = DateTime.Now;
+
+
+                    libraryDatabase.InsertSong(newSong);
+                    Songs.Add(newSong);
+                    numberOfAddedSong++;
                 }
-
-
-                if (tagFile.Tag.JoinedPerformers != null && tagFile.Tag.Title != "")
+                catch
                 {
-                    newSong.Artists = tagFile.Tag.JoinedPerformers;
+                    Debug.Print($"Can't add music with file path: {x}");
+                    continue;
                 }
-
-
-                newSong.Duration = tagFile.Properties.Duration;
-                newSong.DateAdded = System.IO.File.GetCreationTime(x);
-
-
-                Songs.Add(newSong);
-                numberOfAddedSong++;
             }
 
             return true;

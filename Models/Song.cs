@@ -13,6 +13,10 @@ namespace MusicPlayer.Models
     public class Song : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
         private string title = "";
         public string Title
         {
@@ -20,6 +24,16 @@ namespace MusicPlayer.Models
             set
             {
                 title = value;
+                OnPropertyChanged();
+            }
+        }
+        private string? album = null;
+        public string? Album
+        {
+            get { return album;}
+            set
+            {
+                album = value;
                 OnPropertyChanged();
             }
         }
@@ -62,10 +76,6 @@ namespace MusicPlayer.Models
                 dateAdded = value;
                 OnPropertyChanged();
             }
-        }
-        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         private ImageSource? cover;
@@ -111,5 +121,9 @@ namespace MusicPlayer.Models
             }
         }
         public void UnloadCoverArt() => Cover = null;
+
+        public long Id { get; set; }
+        public long FileSize { get; set; }
+        public DateTime LastModified { get; set; } = DateTime.Today;
     }
 }
