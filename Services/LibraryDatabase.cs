@@ -72,7 +72,8 @@ namespace MusicPlayer.Services
 
             cmd.CommandText = """
                 INSERT INTO Songs (FilePath, Title, Artists, Album, DurationMs, FileSize, LastModified, DateAdded, FolderId)
-                    VALUES (@FilePath, @Title, @Artists, @Album, @DurationMs, @FileSize, @LastModified, @DateAdded, @FolderId);
+                    VALUES (@FilePath, @Title, @Artists, @Album, @DurationMs, @FileSize, @LastModified, @DateAdded, @FolderId)
+                    RETURNING Id;
                 """;
             cmd.Parameters.AddWithValue("@FilePath",        song.FilePath);
             cmd.Parameters.AddWithValue("@Title",           song.Title);
@@ -84,14 +85,15 @@ namespace MusicPlayer.Services
             cmd.Parameters.AddWithValue("@DateAdded",       song.DateAdded.ToString("O"));
             cmd.Parameters.AddWithValue("@FolderId",        (object?) folderId ?? DBNull.Value);
 
-            cmd.ExecuteNonQuery();
-
-            cmd.CommandText = "SELECT last_insert_rowid();";
             object? result = cmd.ExecuteScalar();
-            if (result != null)
-                song.Id = Convert.ToInt64(result);
 
-            //Debug.Print($"Added song: {song.Title}, Id: {song.Id}");
+            if (result == null || result is DBNull)
+            {
+                throw new InvalidOperationException("Can't get Id for new Song");
+            }
+
+            song.Id = Convert.ToInt64(result);
+            Debug.Print($"Added song: {song.Title}, Id: {song.Id}");
         }
 
         public List<Song> GetAllSongs()
@@ -131,6 +133,60 @@ namespace MusicPlayer.Services
             }
 
             return songs;
+        }
+
+        public ScanFolder AddScanFolder(string path)
+        {
+            using var conn = OpenConnection();
+
+            using var cmd = conn.CreateCommand();
+
+            DateTime addedTime = DateTime.Now;
+
+            cmd.CommandText = """
+                INSERT INTO ScanFolders(Path, AddedAt)
+                    VALUES (@Path, @AddedAt)
+                    RETURNING Id;
+                """;
+            cmd.Parameters.AddWithValue("@Path",    path);
+            cmd.Parameters.AddWithValue("@AddedAt", addedTime.ToString("O"));
+            object? result = cmd.ExecuteScalar();
+
+            if (result == null || result is DBNull)
+            {
+                throw new InvalidOperationException("Can't get Id for new ScanFolder");
+            }
+
+            long id = Convert.ToInt64(result);
+            ScanFolder scanFolder = new ScanFolder(id, path, addedTime);
+            Debug.Print($"Added scanFolder: {scanFolder.Path}, Id: {scanFolder.Id}");
+            return scanFolder;
+        }
+
+        public List<ScanFolder> GetScanFolders()
+        {
+            using var conn = OpenConnection();
+
+            using var cmd = conn.CreateCommand();
+
+            cmd.CommandText = """
+                SELECT Id, Path, AddedAt
+                    FROM ScanFolders;
+                """;
+
+            List<ScanFolder> scanFolders = new List<ScanFolder>();
+
+            using SqliteDataReader reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                long id = reader.GetInt64(reader.GetOrdinal("Id"));
+                string path = reader.GetString(reader.GetOrdinal("Path"));
+                DateTime addedAt = Convert.ToDateTime(reader.GetString(reader.GetOrdinal("AddedAt")));
+
+                scanFolders.Add(new ScanFolder(id, path, addedAt));
+                Debug.Print($"Has read folder: {scanFolders.Last().Path}, Id:{scanFolders.Last().Id}");
+            }
+            return scanFolders;
         }
     }
 }

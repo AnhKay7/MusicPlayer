@@ -48,19 +48,23 @@ namespace MusicPlayer
         }
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            musicLibrary.LoadFromDatabase();
-
-            //Will change to selected folder and target scan
-            string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
-            if (!musicLibrary.LoadFromFolder(folderPath, out int numberOfAddedSong))
+            try
             {
-                MessageBox.Show("Khong tim thay thuc muc nhac!!!");
-                return;
-            }
+                musicLibrary.LoadFromDatabase();
 
-            //libraryDatabase.GetAllSongs();
-            //libraryDatabase.InsertSong(musicLibrary.Songs[0]);
-            //MessageBox.Show($"Tim duoc {numberOfAddedSong} bai");
+                if (musicLibrary.ScanFolders.Count == 0)
+                {
+                    string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
+                    if (musicLibrary.AddScanFolder(folderPath))
+                        MessageBox.Show($"Quet duoc nhac trong thu muc {folderPath}");
+                    else
+                        MessageBox.Show("Khong tim thay thu muc nhac");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
         #endregion
 
@@ -204,8 +208,6 @@ namespace MusicPlayer
                 sldVolume.Value = lastVolumeValue;
             }
         }
-        #endregion
-
         private void btnShuffle_Click(object sender, RoutedEventArgs e)
         {
             if (playQueue.IsShuffleEnable)
@@ -218,5 +220,7 @@ namespace MusicPlayer
         {
             playQueue.ChangeRepeatMode();
         }
+        #endregion
+
     }
 }

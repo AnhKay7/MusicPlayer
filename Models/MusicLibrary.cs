@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows;
+using System.Windows.Shapes;
 using TagLib;
 
 namespace MusicPlayer.Models
@@ -14,26 +15,44 @@ namespace MusicPlayer.Models
     {
         private LibraryDatabase libraryDatabase = new LibraryDatabase();
         public ObservableCollection<Song> Songs { get; } = new ObservableCollection<Song>();
+        public ObservableCollection<ScanFolder> ScanFolders { get; } = new ObservableCollection<ScanFolder>();
 
+        public bool AddScanFolder(string path)
+        {
+            if (!Directory.Exists(path))
+            {
+                Debug.Print($"MusicLibrary.AddScanFolder: Thu muc {path} khong ton tai");
+                return false;
+            }
+            ScanFolder scanFolder = libraryDatabase.AddScanFolder(path);
+            ScanFolders.Add(scanFolder);
+            LoadFromFolder(scanFolder);
+            return true;
+        }
         public void LoadFromDatabase()
         {
             libraryDatabase.CreateTables();
+            List<ScanFolder> databaseScanFolders = libraryDatabase.GetScanFolders();
+            foreach (ScanFolder scanFolder in databaseScanFolders)
+            {
+                ScanFolders.Add(scanFolder);
+            }
+
             List<Song> databaseSong = libraryDatabase.GetAllSongs();
             foreach (Song song in databaseSong)
             {
                 Songs.Add(song);
             }
+
         }
-        public bool LoadFromFolder(string musicPath, out int numberOfAddedSong)
+        public void LoadFromFolder(ScanFolder scanFolder)
         {
-            numberOfAddedSong = 0;
-
-            if (!Directory.Exists(musicPath))
+            if (!Directory.Exists(scanFolder.Path))
             {
-                return false;
+                Debug.Print($"MusicLibrary.LoadFromFolder: Thu muc {scanFolder.Path} khong ton tai");
+                return;
             }
-
-            string[] file = Directory.GetFiles(musicPath, "*.mp3", SearchOption.AllDirectories);
+            string[] file = Directory.GetFiles(scanFolder.Path, "*.mp3", SearchOption.AllDirectories);
 
             foreach (string x in file)
             {
@@ -49,7 +68,7 @@ namespace MusicPlayer.Models
                     Song newSong = new Song();
                     newSong.FilePath = x;
 
-                    newSong.Title = Path.GetFileNameWithoutExtension(x);
+                    newSong.Title = System.IO.Path.GetFileNameWithoutExtension(x);
                     if (tagFile.Tag.Title != null && tagFile.Tag.Title != "")
                     {
                         newSong.Title = tagFile.Tag.Title;
@@ -73,18 +92,15 @@ namespace MusicPlayer.Models
                     newSong.DateAdded = DateTime.Now;
 
 
-                    libraryDatabase.InsertSong(newSong);
+                    libraryDatabase.InsertSong(newSong, scanFolder.Id);
                     Songs.Add(newSong);
-                    numberOfAddedSong++;
                 }
-                catch
+                catch (Exception ex)
                 {
-                    Debug.Print($"Can't add music with file path: {x}");
+                    Debug.Print($"Can't add music with file path: {x} because {ex.Message}");
                     continue;
                 }
             }
-
-            return true;
         }
     }
 }
