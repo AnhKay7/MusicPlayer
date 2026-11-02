@@ -72,26 +72,28 @@ namespace MusicPlayer.Services
 
             cmd.CommandText = """
                 INSERT INTO Songs (FilePath, Title, Artists, Album, DurationMs, FileSize, LastModified, DateAdded, FolderId)
-                    VALUES (@FilePath, @Title, @Artists, @Album, @DurationMs, @FileSize, @LastModified, @DateAdded, @FolderId);
+                    VALUES (@FilePath, @Title, @Artists, @Album, @DurationMs, @FileSize, @LastModified, @DateAdded, @FolderId)
+                    RETURNING Id;
                 """;
             cmd.Parameters.AddWithValue("@FilePath",        song.FilePath);
             cmd.Parameters.AddWithValue("@Title",           song.Title);
             cmd.Parameters.AddWithValue("@Artists",         song.Artists);
-            cmd.Parameters.AddWithValue("@Album",           song.Album);
+            cmd.Parameters.AddWithValue("@Album",           (object?) song.Album ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@DurationMs",      (long) song.Duration.TotalMilliseconds);
             cmd.Parameters.AddWithValue("@FileSize",        song.FileSize);   
             cmd.Parameters.AddWithValue("@LastModified",    song.LastModified.ToString("O"));
             cmd.Parameters.AddWithValue("@DateAdded",       song.DateAdded.ToString("O"));
             cmd.Parameters.AddWithValue("@FolderId",        (object?) folderId ?? DBNull.Value);
 
-            cmd.ExecuteNonQuery();
-
-            cmd.CommandText = "SELECT last_insert_rowid();";
             object? result = cmd.ExecuteScalar();
-            if (result != null)
-                song.Id = Convert.ToInt64(result);
 
-            //Debug.Print($"Added song: {song.Title}, Id: {song.Id}");
+            if (result == null || result is DBNull)
+            {
+                throw new InvalidOperationException("Can't get Id for new Song");
+            }
+
+            song.Id = Convert.ToInt64(result);
+            Debug.Print($"Added song: {song.Title}, Id: {song.Id}");
         }
 
         public List<Song> GetAllSongs()
@@ -100,7 +102,7 @@ namespace MusicPlayer.Services
 
             using var cmd = conn.CreateCommand();
             cmd.CommandText = """
-                SELECT Id, FilePath, Title, Artists, Album, DurationMs, FileSize, LastModified, DateAdded
+                SELECT Id, FilePath, Title, Artists, Album, DurationMs, FileSize, LastModified, DateAdded, FolderId
                     FROM Songs;
                 """;
 
@@ -126,11 +128,135 @@ namespace MusicPlayer.Services
                 song.FileSize = reader.GetInt64(reader.GetOrdinal("FileSize"));
                 song.LastModified = Convert.ToDateTime(reader.GetString(reader.GetOrdinal("LastModified")));
                 song.DateAdded = Convert.ToDateTime(reader.GetString(reader.GetOrdinal("DateAdded")));
+
+                int folderId = reader.GetOrdinal("FolderId");
+                if (!reader.IsDBNull(folderId))
+                    song.FolderId = reader.GetInt64(folderId);
+
                 songs.Add(song);
                 Debug.Print($"Has read song: {song.Title}, Id:{song.Id}");
             }
 
             return songs;
+        }
+        public void DeleteSong(Song song)
+        {
+            using var conn = OpenConnection();
+
+            using var cmd = conn.CreateCommand();
+
+            cmd.CommandText = """
+                DELETE FROM Songs
+                    WHERE Id = @songId;
+                """;
+            cmd.Parameters.AddWithValue("@songId", song.Id);
+
+            cmd.ExecuteNonQuery();
+        }
+
+        public void UpdateSong(Song song)
+        {
+            using var conn = OpenConnection();
+
+            using var cmd = conn.CreateCommand();
+
+            cmd.CommandText = """
+                UPDATE Songs
+                    SET FilePath        =      @FilePath,
+                        Title           =         @Title,
+                        Artists         =       @Artists,
+                        Album           =         @Album,
+                        DurationMs      =    @DurationMs,
+                        FileSize        =      @FileSize,
+                        LastModified    =  @LastModified,
+                        DateAdded       =     @DateAdded,
+                        FolderId        =      @FolderId
+                    WHERE Id = @songId;
+                """;
+            cmd.Parameters.AddWithValue("@songId", song.Id);
+            cmd.Parameters.AddWithValue("@FilePath", song.FilePath);
+            cmd.Parameters.AddWithValue("@Title", song.Title);
+            cmd.Parameters.AddWithValue("@Artists", song.Artists);
+            cmd.Parameters.AddWithValue("@Album", (object?)song.Album ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@DurationMs", (long)song.Duration.TotalMilliseconds);
+            cmd.Parameters.AddWithValue("@FileSize", song.FileSize);
+            cmd.Parameters.AddWithValue("@LastModified", song.LastModified.ToString("O"));
+            cmd.Parameters.AddWithValue("@DateAdded", song.DateAdded.ToString("O"));
+            cmd.Parameters.AddWithValue("@FolderId", (object?)song.FolderId ?? DBNull.Value);
+
+            cmd.ExecuteNonQuery();
+        }
+
+        public ScanFolder AddScanFolder(string path)
+        {
+            using var conn = OpenConnection();
+
+            using var cmd = conn.CreateCommand();
+
+            DateTime addedTime = DateTime.Now;
+
+            cmd.CommandText = """
+                INSERT INTO ScanFolders(Path, AddedAt)
+                    VALUES (@Path, @AddedAt)
+                    RETURNING Id;
+                """;
+            cmd.Parameters.AddWithValue("@Path",    path);
+            cmd.Parameters.AddWithValue("@AddedAt", addedTime.ToString("O"));
+            object? result = cmd.ExecuteScalar();
+
+            if (result == null || result is DBNull)
+            {
+                throw new InvalidOperationException("Can't get Id for new ScanFolder");
+            }
+
+            long id = Convert.ToInt64(result);
+            ScanFolder scanFolder = new ScanFolder(id, path, addedTime);
+            Debug.Print($"Added scanFolder: {scanFolder.Path}, Id: {scanFolder.Id}");
+            return scanFolder;
+        }
+
+        public void DeleteScanFolder(long folderId)
+        {
+
+            using var conn = OpenConnection();
+
+            using var cmd = conn.CreateCommand();
+
+            cmd.CommandText = """
+                DELETE FROM Songs
+                    WHERE FolderId = @folderId;
+                DELETE FROM ScanFolders
+                    WHERE Id = @folderId;
+                """;
+            cmd.Parameters.AddWithValue("@folderId", folderId);
+
+            cmd.ExecuteNonQuery();
+        }
+
+        public List<ScanFolder> GetScanFolders()
+        {
+            using var conn = OpenConnection();
+
+            using var cmd = conn.CreateCommand();
+
+            cmd.CommandText = """
+                SELECT Id, Path, AddedAt
+                    FROM ScanFolders;
+                """;
+
+            List<ScanFolder> scanFolders = new List<ScanFolder>();
+
+            using SqliteDataReader reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                long id = reader.GetInt64(reader.GetOrdinal("Id"));
+                string path = reader.GetString(reader.GetOrdinal("Path"));
+                DateTime addedAt = Convert.ToDateTime(reader.GetString(reader.GetOrdinal("AddedAt")));
+
+                scanFolders.Add(new ScanFolder(id, path, addedAt));
+                Debug.Print($"Has read folder: {scanFolders.Last().Path}, Id:{scanFolders.Last().Id}");
+            }
+            return scanFolders;
         }
     }
 }
