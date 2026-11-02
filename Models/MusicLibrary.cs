@@ -161,12 +161,32 @@ namespace MusicPlayer.Models
                 }
             }
         }
-        public void Refresh()
+        public List<string> Refresh()
         {
             foreach (ScanFolder scanFolder in ScanFolders)
             {
                 LoadFromFolder(scanFolder);
             }
+
+            List<Song> pendingDeleteSong = 
+                Songs.Where(s => !System.IO.File.Exists(s.FilePath) 
+                && Directory.Exists(ScanFolders.FirstOrDefault(f => s.FolderId == f.Id)?.Path)).ToList();
+
+            List<string> errorList = new List<string>();
+
+            foreach (Song song in pendingDeleteSong)
+            {
+                try
+                {
+                    libraryDatabase.DeleteSong(song);
+                    Songs.Remove(song);
+                }
+                catch (Exception ex)
+                {
+                    errorList.Add($"Error with {song.Title}, Message: {ex.Message}");
+                }
+            }
+            return errorList;
         }
         public List<string> UpdateScanFolders(IEnumerable<ScanFolder> targetScanFolderList)
         {

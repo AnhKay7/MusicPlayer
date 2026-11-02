@@ -139,6 +139,20 @@ namespace MusicPlayer.Services
 
             return songs;
         }
+        public void DeleteSong(Song song)
+        {
+            using var conn = OpenConnection();
+
+            using var cmd = conn.CreateCommand();
+
+            cmd.CommandText = """
+                DELETE FROM Songs
+                    WHERE Id = @songId;
+                """;
+            cmd.Parameters.AddWithValue("@songId", song.Id);
+
+            cmd.ExecuteNonQuery();
+        }
 
         public ScanFolder AddScanFolder(string path)
         {

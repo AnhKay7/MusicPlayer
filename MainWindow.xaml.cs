@@ -279,11 +279,21 @@ namespace MusicPlayer
         {
             try
             {
-                musicLibrary.Refresh();
+                List<string> errorList = musicLibrary.Refresh();
+                if (errorList.Count > 0)
+                {
+                    string allErrorMessage = string.Join("\n", errorList);
+                    MessageBox.Show(
+                        $"Some error happen when refresh music library:\n{allErrorMessage}",
+                        "Partial Refresh Errors",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning
+                        );
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                MessageBox.Show($"Error happen when refresh. Message: {ex.Message}", "Refresh Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
