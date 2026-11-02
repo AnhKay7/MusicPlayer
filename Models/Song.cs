@@ -125,5 +125,6 @@ namespace MusicPlayer.Models
         public long Id { get; set; }
         public long FileSize { get; set; }
         public DateTime LastModified { get; set; } = DateTime.Today;
+        public long? FolderId { get; set; }
     }
 }

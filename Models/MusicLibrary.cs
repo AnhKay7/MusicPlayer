@@ -7,10 +7,11 @@ using System.IO;
 using System.Text;
 using System.Windows;
 using TagLib;
+using static MusicPlayer.Models.MusicLibrary;
 
 namespace MusicPlayer.Models
 {
-    class MusicLibrary
+    public class MusicLibrary
     {
         private LibraryDatabase libraryDatabase = new LibraryDatabase();
         public ObservableCollection<Song> Songs { get; } = new ObservableCollection<Song>();
@@ -33,21 +34,22 @@ namespace MusicPlayer.Models
 
             return path.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
         }
-        public AddFolderResult AddScanFolder(string path)
+        public AddFolderResult ValidateNewFolderPath(string path, IEnumerable<ScanFolder> targetScanFolderList, out string normalizePath)
         {
+            normalizePath = path;
             if (!Directory.Exists(path))
             {
                 Debug.Print($"MusicLibrary.AddScanFolder: Thu muc {path} khong ton tai");
                 return AddFolderResult.NotFound;
             }
 
-            string normalizePath = Path.GetFullPath(path);
+            normalizePath = Path.GetFullPath(path);
             if (normalizePath != Path.GetPathRoot(normalizePath))
             {
                 normalizePath = normalizePath.TrimEnd(Path.DirectorySeparatorChar);
             }
 
-            foreach (ScanFolder existsfolder in ScanFolders)
+            foreach (ScanFolder existsfolder in targetScanFolderList)
             {
                 if (string.Equals(existsfolder.Path, normalizePath, StringComparison.OrdinalIgnoreCase))
                     return AddFolderResult.Duplicate;
@@ -58,10 +60,33 @@ namespace MusicPlayer.Models
                     return AddFolderResult.ParentOfExisting;
             }
 
-            ScanFolder scanFolder = libraryDatabase.AddScanFolder(normalizePath);
-            ScanFolders.Add(scanFolder);
-            LoadFromFolder(scanFolder);
             return AddFolderResult.Success;
+        }
+        public AddFolderResult AddScanFolder(string path)
+        {
+            AddFolderResult addFolderResult = ValidateNewFolderPath(path, ScanFolders, out string normalizePath);
+            if (addFolderResult == AddFolderResult.Success)
+            {
+                ScanFolder scanFolder = libraryDatabase.AddScanFolder(normalizePath);
+                ScanFolders.Add(scanFolder);
+                LoadFromFolder(scanFolder);
+            }
+            return addFolderResult;
+        }
+        public void RemoveScanFolder(ScanFolder requestFolder)
+        {
+            if (!ScanFolders.Contains(requestFolder))
+                return;
+
+            libraryDatabase.DeleteScanFolder(requestFolder.Id);
+
+            var songToRemove = Songs.Where(s => s.FolderId == requestFolder.Id).ToList();
+
+            foreach (Song song in songToRemove)
+            {
+                Songs.Remove(song);
+            }
+            ScanFolders.Remove(requestFolder);
         }
         public void LoadFromDatabase()
         {
@@ -125,7 +150,7 @@ namespace MusicPlayer.Models
                     newSong.Duration = tagFile.Properties.Duration;
                     newSong.DateAdded = DateTime.Now;
 
-
+                    newSong.FolderId = scanFolder.Id;
                     libraryDatabase.InsertSong(newSong, scanFolder.Id);
                     Songs.Add(newSong);
                 }
@@ -135,6 +160,63 @@ namespace MusicPlayer.Models
                     continue;
                 }
             }
+        }
+        public void Refresh()
+        {
+            foreach (ScanFolder scanFolder in ScanFolders)
+            {
+                LoadFromFolder(scanFolder);
+            }
+        }
+        public List<string> UpdateScanFolders(IEnumerable<ScanFolder> targetScanFolderList)
+        {
+            List<ScanFolder> pendingRemoveFolders = ScanFolders.Where(f => !targetScanFolderList.Any(rf => rf.Id == f.Id)).ToList();
+
+            List<string> errorList = new List<string>();
+
+            foreach (ScanFolder requestFolder in pendingRemoveFolders)
+            {
+                try
+                {
+                    RemoveScanFolder(requestFolder);
+                }
+                catch (Exception ex)
+                {
+                    errorList.Add($"Fail to remove {requestFolder.Path}, Message: {ex.Message}");
+                }
+            }
+
+            List<ScanFolder> pendingAddFolders = targetScanFolderList.Where(s => s.Id == 0).ToList();
+
+            foreach (ScanFolder requestFolder in pendingAddFolders)
+            {
+                try
+                {
+                    switch (AddScanFolder(requestFolder.Path))
+                    {
+                        case AddFolderResult.Duplicate:
+                            errorList.Add($"Fail to add {requestFolder.Path}, this folder already exists in your library");
+                            break;
+                        case AddFolderResult.SubFolder:
+                            errorList.Add($"Fail to add {requestFolder.Path}, the parent folder of this folder is already in your library.");
+                            break;
+                        case MusicLibrary.AddFolderResult.NotFound:
+                            errorList.Add($"Fail to add {requestFolder.Path}, this is not a valid folder.");
+                            break;
+                        case MusicLibrary.AddFolderResult.ParentOfExisting:
+                            errorList.Add($"Fail to add {requestFolder.Path}, this folder contains another folder that is already in your library");
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errorList.Add($"Fail to add {requestFolder.Path}, Message: {ex.Message}");
+                }
+            }
+
+            return errorList;
         }
     }
 }

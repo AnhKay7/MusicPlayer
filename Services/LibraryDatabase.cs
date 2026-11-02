@@ -102,7 +102,7 @@ namespace MusicPlayer.Services
 
             using var cmd = conn.CreateCommand();
             cmd.CommandText = """
-                SELECT Id, FilePath, Title, Artists, Album, DurationMs, FileSize, LastModified, DateAdded
+                SELECT Id, FilePath, Title, Artists, Album, DurationMs, FileSize, LastModified, DateAdded, FolderId
                     FROM Songs;
                 """;
 
@@ -128,6 +128,11 @@ namespace MusicPlayer.Services
                 song.FileSize = reader.GetInt64(reader.GetOrdinal("FileSize"));
                 song.LastModified = Convert.ToDateTime(reader.GetString(reader.GetOrdinal("LastModified")));
                 song.DateAdded = Convert.ToDateTime(reader.GetString(reader.GetOrdinal("DateAdded")));
+
+                int folderId = reader.GetOrdinal("FolderId");
+                if (!reader.IsDBNull(folderId))
+                    song.FolderId = reader.GetInt64(folderId);
+
                 songs.Add(song);
                 Debug.Print($"Has read song: {song.Title}, Id:{song.Id}");
             }
@@ -161,6 +166,24 @@ namespace MusicPlayer.Services
             ScanFolder scanFolder = new ScanFolder(id, path, addedTime);
             Debug.Print($"Added scanFolder: {scanFolder.Path}, Id: {scanFolder.Id}");
             return scanFolder;
+        }
+
+        public void DeleteScanFolder(long folderId)
+        {
+
+            using var conn = OpenConnection();
+
+            using var cmd = conn.CreateCommand();
+
+            cmd.CommandText = """
+                DELETE FROM Songs
+                    WHERE FolderId = @folderId;
+                DELETE FROM ScanFolders
+                    WHERE Id = @folderId;
+                """;
+            cmd.Parameters.AddWithValue("@folderId", folderId);
+
+            cmd.ExecuteNonQuery();
         }
 
         public List<ScanFolder> GetScanFolders()

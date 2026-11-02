@@ -274,5 +274,24 @@ namespace MusicPlayer
                 MessageBox.Show(ex.Message);
             }
         }
+
+        private void btnRefresh_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                musicLibrary.Refresh();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void menuManageScanFolder_Click(object sender, RoutedEventArgs e)
+        {
+            Window manageFolderWindow = new ManageFoldersWindow(musicLibrary);
+            manageFolderWindow.Owner = this;
+            manageFolderWindow.ShowDialog();
+        }
     }
 }
