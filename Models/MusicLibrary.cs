@@ -104,6 +104,37 @@ namespace MusicPlayer.Models
             }
 
         }
+        private Song ReadTagSong(Song targetSong)
+        {
+            using var tagFile = TagLib.File.Create(targetSong.FilePath);
+
+            Song song = new Song(targetSong);
+
+            FileInfo fileInfo = new System.IO.FileInfo(song.FilePath);
+            song.FileSize = fileInfo.Length;
+            song.LastModified = fileInfo.LastWriteTime;
+
+            song.Title = System.IO.Path.GetFileNameWithoutExtension(song.FilePath);
+            if (tagFile.Tag.Title != null && tagFile.Tag.Title != "")
+            {
+                song.Title = tagFile.Tag.Title;
+            }
+
+            if (tagFile.Tag.JoinedPerformers != null && tagFile.Tag.JoinedPerformers != "")
+            {
+                song.Artists = tagFile.Tag.JoinedPerformers;
+            }
+            else song.Artists = Song.ArtistsDefault;
+
+            if (tagFile.Tag.Album != null && tagFile.Tag.Album != "")
+            {
+                song.Album = tagFile.Tag.Album;
+            }
+            else song.Album = Song.AlbumDefault;
+
+            song.Duration = tagFile.Properties.Duration;
+            return song;
+        }
         public void LoadFromFolder(ScanFolder scanFolder)
         {
             if (!Directory.Exists(scanFolder.Path))
@@ -122,34 +153,10 @@ namespace MusicPlayer.Models
 
                 try
                 {
-                    using var tagFile = TagLib.File.Create(x);
-
                     Song newSong = new Song();
                     newSong.FilePath = x;
-
-                    newSong.Title = System.IO.Path.GetFileNameWithoutExtension(x);
-                    if (tagFile.Tag.Title != null && tagFile.Tag.Title != "")
-                    {
-                        newSong.Title = tagFile.Tag.Title;
-                    }
-
-                    if (tagFile.Tag.JoinedPerformers != null && tagFile.Tag.JoinedPerformers != "")
-                    {
-                        newSong.Artists = tagFile.Tag.JoinedPerformers;
-                    }
-
-                    if (tagFile.Tag.Album != null && tagFile.Tag.Album != "")
-                    {
-                        newSong.Album = tagFile.Tag.Album;
-                    }
-
-                    FileInfo fileInfo = new System.IO.FileInfo(x);
-                    newSong.FileSize = fileInfo.Length;
-                    newSong.LastModified = fileInfo.LastWriteTime;
-
-                    newSong.Duration = tagFile.Properties.Duration;
+                    newSong = ReadTagSong(newSong);
                     newSong.DateAdded = DateTime.Now;
-
                     newSong.FolderId = scanFolder.Id;
                     libraryDatabase.InsertSong(newSong, scanFolder.Id);
                     Songs.Add(newSong);
@@ -168,8 +175,8 @@ namespace MusicPlayer.Models
                 LoadFromFolder(scanFolder);
             }
 
-            List<Song> pendingDeleteSong = 
-                Songs.Where(s => !System.IO.File.Exists(s.FilePath) 
+            List<Song> pendingDeleteSong =
+                Songs.Where(s => !System.IO.File.Exists(s.FilePath)
                 && Directory.Exists(ScanFolders.FirstOrDefault(f => s.FolderId == f.Id)?.Path)).ToList();
 
             List<string> errorList = new List<string>();
@@ -180,6 +187,24 @@ namespace MusicPlayer.Models
                 {
                     libraryDatabase.DeleteSong(song);
                     Songs.Remove(song);
+                }
+                catch (Exception ex)
+                {
+                    errorList.Add($"Error with {song.Title}, Message: {ex.Message}");
+                }
+            }
+
+            List<Song> changedSongs = Songs.Where(s =>
+                    System.IO.File.Exists(s.FilePath) &&
+                    System.IO.File.GetLastWriteTime(s.FilePath) != s.LastModified).ToList();
+
+            foreach (Song song in changedSongs)
+            {
+                try
+                {
+                    Song updatedSong = ReadTagSong(song);
+                    libraryDatabase.UpdateSong(updatedSong);
+                    song.CpyFrom(updatedSong);
                 }
                 catch (Exception ex)
                 {

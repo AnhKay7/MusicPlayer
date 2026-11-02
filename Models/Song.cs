@@ -12,6 +12,39 @@ namespace MusicPlayer.Models
 {
     public class Song : INotifyPropertyChanged
     {
+        public const string TitleDefalt = "";
+        public const string ArtistsDefault = "Unknown";
+        public const string? AlbumDefault = null;
+
+        public Song() { }
+        public Song(Song cpySong)
+        {
+            this.Title = cpySong.Title;
+            this.Album = cpySong.Album;
+            this.Artists = cpySong.Artists;
+            this.Duration = cpySong.Duration;
+            this.FilePath = cpySong.FilePath;
+            this.DateAdded = cpySong.DateAdded;
+            this.Cover = cpySong.Cover;
+            this.Id = cpySong.Id;
+            this.FileSize = cpySong.FileSize;
+            this.LastModified = cpySong.LastModified;
+            this.FolderId = cpySong.FolderId;
+        }
+        public void CpyFrom(Song cpySong)
+        {
+            this.Title = cpySong.Title;
+            this.Album = cpySong.Album;
+            this.Artists = cpySong.Artists;
+            this.Duration = cpySong.Duration;
+            this.FilePath = cpySong.FilePath;
+            this.DateAdded = cpySong.DateAdded;
+            this.Cover = cpySong.Cover;
+            this.Id = cpySong.Id;
+            this.FileSize = cpySong.FileSize;
+            this.LastModified = cpySong.LastModified;
+            this.FolderId = cpySong.FolderId;
+        }
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
@@ -37,7 +70,7 @@ namespace MusicPlayer.Models
                 OnPropertyChanged();
             }
         }
-        private string artists = "Unknown";
+        private string artists = ArtistsDefault;
         public string Artists
         {
             get { return artists; }

@@ -78,7 +78,7 @@ namespace MusicPlayer.Services
             cmd.Parameters.AddWithValue("@FilePath",        song.FilePath);
             cmd.Parameters.AddWithValue("@Title",           song.Title);
             cmd.Parameters.AddWithValue("@Artists",         song.Artists);
-            cmd.Parameters.AddWithValue("@Album",           song.Album);
+            cmd.Parameters.AddWithValue("@Album",           (object?) song.Album ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@DurationMs",      (long) song.Duration.TotalMilliseconds);
             cmd.Parameters.AddWithValue("@FileSize",        song.FileSize);   
             cmd.Parameters.AddWithValue("@LastModified",    song.LastModified.ToString("O"));
@@ -150,6 +150,39 @@ namespace MusicPlayer.Services
                     WHERE Id = @songId;
                 """;
             cmd.Parameters.AddWithValue("@songId", song.Id);
+
+            cmd.ExecuteNonQuery();
+        }
+
+        public void UpdateSong(Song song)
+        {
+            using var conn = OpenConnection();
+
+            using var cmd = conn.CreateCommand();
+
+            cmd.CommandText = """
+                UPDATE Songs
+                    SET FilePath        =      @FilePath,
+                        Title           =         @Title,
+                        Artists         =       @Artists,
+                        Album           =         @Album,
+                        DurationMs      =    @DurationMs,
+                        FileSize        =      @FileSize,
+                        LastModified    =  @LastModified,
+                        DateAdded       =     @DateAdded,
+                        FolderId        =      @FolderId
+                    WHERE Id = @songId;
+                """;
+            cmd.Parameters.AddWithValue("@songId", song.Id);
+            cmd.Parameters.AddWithValue("@FilePath", song.FilePath);
+            cmd.Parameters.AddWithValue("@Title", song.Title);
+            cmd.Parameters.AddWithValue("@Artists", song.Artists);
+            cmd.Parameters.AddWithValue("@Album", (object?)song.Album ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@DurationMs", (long)song.Duration.TotalMilliseconds);
+            cmd.Parameters.AddWithValue("@FileSize", song.FileSize);
+            cmd.Parameters.AddWithValue("@LastModified", song.LastModified.ToString("O"));
+            cmd.Parameters.AddWithValue("@DateAdded", song.DateAdded.ToString("O"));
+            cmd.Parameters.AddWithValue("@FolderId", (object?)song.FolderId ?? DBNull.Value);
 
             cmd.ExecuteNonQuery();
         }
