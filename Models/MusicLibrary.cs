@@ -6,7 +6,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows;
-using System.Windows.Shapes;
 using TagLib;
 
 namespace MusicPlayer.Models
@@ -17,17 +16,52 @@ namespace MusicPlayer.Models
         public ObservableCollection<Song> Songs { get; } = new ObservableCollection<Song>();
         public ObservableCollection<ScanFolder> ScanFolders { get; } = new ObservableCollection<ScanFolder>();
 
-        public bool AddScanFolder(string path)
+        public enum AddFolderResult
+        {
+            Success,
+            Duplicate,
+            SubFolder,
+            NotFound,
+            ParentOfExisting
+        }
+        private string EnsureTraillingSeparatorCharPath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                return path;
+            }
+
+            return path.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        }
+        public AddFolderResult AddScanFolder(string path)
         {
             if (!Directory.Exists(path))
             {
                 Debug.Print($"MusicLibrary.AddScanFolder: Thu muc {path} khong ton tai");
-                return false;
+                return AddFolderResult.NotFound;
             }
-            ScanFolder scanFolder = libraryDatabase.AddScanFolder(path);
+
+            string normalizePath = Path.GetFullPath(path);
+            if (normalizePath != Path.GetPathRoot(normalizePath))
+            {
+                normalizePath = normalizePath.TrimEnd(Path.DirectorySeparatorChar);
+            }
+
+            foreach (ScanFolder existsfolder in ScanFolders)
+            {
+                if (string.Equals(existsfolder.Path, normalizePath, StringComparison.OrdinalIgnoreCase))
+                    return AddFolderResult.Duplicate;
+
+                if (normalizePath.StartsWith(EnsureTraillingSeparatorCharPath(existsfolder.Path), StringComparison.OrdinalIgnoreCase))
+                    return AddFolderResult.SubFolder;
+                if (existsfolder.Path.StartsWith(EnsureTraillingSeparatorCharPath(normalizePath), StringComparison.OrdinalIgnoreCase))
+                    return AddFolderResult.ParentOfExisting;
+            }
+
+            ScanFolder scanFolder = libraryDatabase.AddScanFolder(normalizePath);
             ScanFolders.Add(scanFolder);
             LoadFromFolder(scanFolder);
-            return true;
+            return AddFolderResult.Success;
         }
         public void LoadFromDatabase()
         {

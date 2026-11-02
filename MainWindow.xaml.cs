@@ -1,5 +1,7 @@
-﻿using MusicPlayer.Models;
+﻿using Microsoft.Win32;
+using MusicPlayer.Models;
 using MusicPlayer.Services;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows;
@@ -55,10 +57,14 @@ namespace MusicPlayer
                 if (musicLibrary.ScanFolders.Count == 0)
                 {
                     string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
-                    if (musicLibrary.AddScanFolder(folderPath))
-                        MessageBox.Show($"Quet duoc nhac trong thu muc {folderPath}");
-                    else
-                        MessageBox.Show("Khong tim thay thu muc nhac");
+                    switch (musicLibrary.AddScanFolder(folderPath)) {
+                        case MusicLibrary.AddFolderResult.Success:
+                            MessageBox.Show($"Quet duoc nhac trong thu muc {folderPath}");
+                            break;
+                        default:
+                            MessageBox.Show($"Khong tim thay thu muc mac dinh.");
+                            break;
+                    }
                 }
             }
             catch (Exception ex)
@@ -109,7 +115,7 @@ namespace MusicPlayer
         {
             if (!audioPlayer.Play(song.FilePath))
             {
-                MessageBox.Show("Ban nhac nay khong con ton tai!!!");
+                MessageBox.Show("This song no longer exists!!!");
                 return;
             }
             currentSong?.UnloadCoverArt();
@@ -222,5 +228,51 @@ namespace MusicPlayer
         }
         #endregion
 
+        private void btnAdd_Click(object sender, RoutedEventArgs e)
+        {
+            btnAdd.ContextMenu.PlacementTarget = btnAdd;
+            btnAdd.ContextMenu.IsOpen = true;
+        }
+
+        private void menuAddFolder_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new OpenFolderDialog();
+            dialog.Title = "Select Music Folder";
+            bool? result = dialog.ShowDialog();
+            if (result != true)
+            {
+                Debug.Print("User cancel choosing folder");
+                return;
+            }
+
+            try
+            {
+                string chosenFolderPath = dialog.FolderName;
+                switch (musicLibrary.AddScanFolder(chosenFolderPath))
+                {
+                    case MusicLibrary.AddFolderResult.Success:
+                        MessageBox.Show("Succesfully added new music folder.");
+                        break;
+                    case MusicLibrary.AddFolderResult.Duplicate:
+                        MessageBox.Show("This folder is already in your library.");
+                        break;
+                    case MusicLibrary.AddFolderResult.NotFound:
+                        MessageBox.Show("Fail: This is not a valid folder.");
+                        break;
+                    case MusicLibrary.AddFolderResult.SubFolder:
+                        MessageBox.Show("Fail: The parent folder of this folder is already in your library.");
+                        break;
+                    case MusicLibrary.AddFolderResult.ParentOfExisting:
+                        MessageBox.Show("Fail: This folder contains another folder that is already in your library");
+                        break;
+                    default:
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
     }
 }
