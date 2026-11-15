@@ -115,5 +115,23 @@ namespace MusicPlayer.Models
 
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentRepeatMode)));
         }
+        public void Remove(Song song)
+        {
+            if (Current == null)
+                return;
+
+            Song currentSong = Current;
+
+            if (song == currentSong)
+                return;
+
+            songs.Remove(song);
+            shuffleSongs.Remove(song);
+
+            if (isShuffleEnable)
+                currentIdx = shuffleSongs.IndexOf(currentSong);
+            else
+                currentIdx = songs.IndexOf(currentSong);
+        }
     }
 }

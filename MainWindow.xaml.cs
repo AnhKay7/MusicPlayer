@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using MusicPlayer.Models;
 using MusicPlayer.Services;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -34,6 +35,8 @@ namespace MusicPlayer
         public MainWindow()
         {
             InitializeComponent();
+
+            musicLibrary.Songs.CollectionChanged += Songs_CollectionChanged;
 
             audioPlayer.StateChanged += AudioPlayer_StateChanged;
             audioPlayer.SongEnded += SongEndedHandle;
@@ -336,6 +339,24 @@ namespace MusicPlayer
             catch (Exception ex)
             {
                 MessageBox.Show($"Error happen when add new selected songs. Message: {ex.Message}", "Add selected song Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void Songs_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            // e.Action    : loại thay đổi (Add, Remove, Reset, ...)
+            // e.OldItems  : các item bị xoá (chỉ có khi Remove/Replace), kiểu IList (không generic)
+
+            if (e.Action == NotifyCollectionChangedAction.Remove && e.OldItems != null)
+            {
+                foreach (object? oldItem in e.OldItems)
+                {
+                    if (oldItem is Song song)
+                    {
+                        Debug.Print($"Remove: {song.Title}");
+                        playQueue.Remove(song);
+                    }
+                }
             }
         }
     }

@@ -172,21 +172,29 @@ namespace MusicPlayer.Models
 
             foreach (string x in file)
             {
-                if (Songs.Any(s => s.FilePath == x))
+                var song = Songs.FirstOrDefault(s => string.Equals(s.FilePath, x, StringComparison.OrdinalIgnoreCase));
+                if (song != null)
                 {
+                    if (song.FolderId == null)
+                    {
+                        try
+                        {
+                            Song updatedSong = new Song(song);
+                            updatedSong.FolderId = scanFolder.Id;
+                            libraryDatabase.UpdateSong(updatedSong);
+                            song.CpyFrom(updatedSong);
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.Print($"{song.Title} is already exists in {scanFolder.Path}, tried to update it with new FolderId: {scanFolder.Id}, but an Error happened, Message: {ex.Message}");
+                        }
+                    }
                     continue;
                 }
 
                 try
                 {
                     AddSongFromFile(x, scanFolder.Id);
-                    //Song newSong = new Song();
-                    //newSong.FilePath = x;
-                    //newSong = ReadTagSong(newSong);
-                    //newSong.DateAdded = DateTime.Now;
-                    //newSong.FolderId = scanFolder.Id;
-                    //libraryDatabase.InsertSong(newSong, scanFolder.Id);
-                    //Songs.Add(newSong);
                 }
                 catch (Exception ex)
                 {
@@ -195,6 +203,17 @@ namespace MusicPlayer.Models
                 }
             }
         }
+
+        private bool ShouldRemoveSong(Song s)
+        {
+            if (System.IO.File.Exists(s.FilePath))
+                return false;
+
+            if (s.FolderId == null)
+                return Directory.Exists(Path.GetPathRoot(s.FilePath));
+
+            return Directory.Exists(ScanFolders.FirstOrDefault(f => s.FolderId == f.Id)?.Path);
+        }
         public List<string> Refresh()
         {
             foreach (ScanFolder scanFolder in ScanFolders)
@@ -202,13 +221,12 @@ namespace MusicPlayer.Models
                 LoadFromFolder(scanFolder);
             }
 
-            List<Song> pendingDeleteSong =
-                Songs.Where(s => !System.IO.File.Exists(s.FilePath)
-                && Directory.Exists(ScanFolders.FirstOrDefault(f => s.FolderId == f.Id)?.Path)).ToList();
+            List<Song> shouldRemoveSong = Songs.Where(s => ShouldRemoveSong(s)).ToList();
+
 
             List<string> errorList = new List<string>();
 
-            foreach (Song song in pendingDeleteSong)
+            foreach (Song song in shouldRemoveSong)
             {
                 try
                 {
