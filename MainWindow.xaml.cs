@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using MusicPlayer.Models;
 using MusicPlayer.Services;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -35,6 +36,8 @@ namespace MusicPlayer
         {
             InitializeComponent();
 
+            musicLibrary.Songs.CollectionChanged += Songs_CollectionChanged;
+
             audioPlayer.StateChanged += AudioPlayer_StateChanged;
             audioPlayer.SongEnded += SongEndedHandle;
 
@@ -57,7 +60,8 @@ namespace MusicPlayer
                 if (musicLibrary.ScanFolders.Count == 0)
                 {
                     string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
-                    switch (musicLibrary.AddScanFolder(folderPath)) {
+                    switch (musicLibrary.AddScanFolder(folderPath))
+                    {
                         case MusicLibrary.AddFolderResult.Success:
                             MessageBox.Show($"Quet duoc nhac trong thu muc {folderPath}");
                             break;
@@ -284,7 +288,7 @@ namespace MusicPlayer
                 {
                     string allErrorMessage = string.Join("\n", errorList);
                     MessageBox.Show(
-                        $"Some error happen when refresh music library:\n{allErrorMessage}",
+                        $"Some error happen when refresh music library:\n\n{allErrorMessage}",
                         "Partial Refresh Errors",
                         MessageBoxButton.OK,
                         MessageBoxImage.Warning
@@ -302,6 +306,58 @@ namespace MusicPlayer
             Window manageFolderWindow = new ManageFoldersWindow(musicLibrary);
             manageFolderWindow.Owner = this;
             manageFolderWindow.ShowDialog();
+        }
+
+        private void menuAddSongs_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new OpenFileDialog();
+            dialog.Title = "Select New Songs";
+            dialog.Filter = "MP3 files (*.mp3)|*.mp3";
+            dialog.Multiselect = true;
+            bool? result = dialog.ShowDialog();
+            if (result != true)
+            {
+                Debug.Print("User cancel choosing new songs");
+                return;
+            }
+            string[] paths = dialog.FileNames;
+
+            try
+            {
+                List<string> errorList = musicLibrary.AddSingleSongFromList(paths);
+                if (errorList.Count > 0)
+                {
+                    string allErrorMessage = string.Join("\n", errorList);
+                    MessageBox.Show(
+                        $"Some error happen when add new selected songs to your library:\n\n{allErrorMessage}",
+                        "Partial Errors",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning
+                        );
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error happen when add new selected songs. Message: {ex.Message}", "Add selected song Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void Songs_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            // e.Action    : loại thay đổi (Add, Remove, Reset, ...)
+            // e.OldItems  : các item bị xoá (chỉ có khi Remove/Replace), kiểu IList (không generic)
+
+            if (e.Action == NotifyCollectionChangedAction.Remove && e.OldItems != null)
+            {
+                foreach (object? oldItem in e.OldItems)
+                {
+                    if (oldItem is Song song)
+                    {
+                        Debug.Print($"Remove: {song.Title}");
+                        playQueue.Remove(song);
+                    }
+                }
+            }
         }
     }
 }

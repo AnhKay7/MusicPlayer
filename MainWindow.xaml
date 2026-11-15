@@ -70,6 +70,7 @@
                                     <MenuItem x:Name="menuAddFolder" Header="Add new music folder" Click="menuAddFolder_Click"></MenuItem>
                                     <MenuItem Header="Add new playlist"></MenuItem>
                                     <MenuItem x:Name="menuManageScanFolder" Header="Manage scan folders" Click="menuManageScanFolder_Click"></MenuItem>
+                                    <MenuItem x:Name="menuAddSongs" Header="Add songs" Click="menuAddSongs_Click"></MenuItem>
                                 </ContextMenu>
                             </Button.ContextMenu>
                         </Button>

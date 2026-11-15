@@ -135,6 +135,32 @@ namespace MusicPlayer.Models
             song.Duration = tagFile.Properties.Duration;
             return song;
         }
+        private ScanFolder? FindContainingFolder(string filePath)
+        {
+            if (!System.IO.File.Exists(filePath))
+            { 
+                Debug.Print($"MusicLibrary.AddScanFolder: Duong dan {filePath} khong ton tai");
+                return null;
+            }
+
+            foreach (ScanFolder existsfolder in ScanFolders)
+            {
+                if (filePath.StartsWith(EnsureTraillingSeparatorCharPath(existsfolder.Path), StringComparison.OrdinalIgnoreCase))
+                    return existsfolder;
+            }
+
+            return null;
+        }
+        private void AddSongFromFile(string filePath, long? folderId)
+        {
+            Song newSong = new Song();
+            newSong.FilePath = filePath;
+            newSong = ReadTagSong(newSong);
+            newSong.DateAdded = DateTime.Now;
+            newSong.FolderId = folderId;
+            libraryDatabase.InsertSong(newSong, folderId);
+            Songs.Add(newSong);
+        }
         public void LoadFromFolder(ScanFolder scanFolder)
         {
             if (!Directory.Exists(scanFolder.Path))
@@ -146,20 +172,29 @@ namespace MusicPlayer.Models
 
             foreach (string x in file)
             {
-                if (Songs.Any(s => s.FilePath == x))
+                var song = Songs.FirstOrDefault(s => string.Equals(s.FilePath, x, StringComparison.OrdinalIgnoreCase));
+                if (song != null)
                 {
+                    if (song.FolderId == null)
+                    {
+                        try
+                        {
+                            Song updatedSong = new Song(song);
+                            updatedSong.FolderId = scanFolder.Id;
+                            libraryDatabase.UpdateSong(updatedSong);
+                            song.CpyFrom(updatedSong);
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.Print($"{song.Title} is already exists in {scanFolder.Path}, tried to update it with new FolderId: {scanFolder.Id}, but an Error happened, Message: {ex.Message}");
+                        }
+                    }
                     continue;
                 }
 
                 try
                 {
-                    Song newSong = new Song();
-                    newSong.FilePath = x;
-                    newSong = ReadTagSong(newSong);
-                    newSong.DateAdded = DateTime.Now;
-                    newSong.FolderId = scanFolder.Id;
-                    libraryDatabase.InsertSong(newSong, scanFolder.Id);
-                    Songs.Add(newSong);
+                    AddSongFromFile(x, scanFolder.Id);
                 }
                 catch (Exception ex)
                 {
@@ -168,6 +203,17 @@ namespace MusicPlayer.Models
                 }
             }
         }
+
+        private bool ShouldRemoveSong(Song s)
+        {
+            if (System.IO.File.Exists(s.FilePath))
+                return false;
+
+            if (s.FolderId == null)
+                return Directory.Exists(Path.GetPathRoot(s.FilePath));
+
+            return Directory.Exists(ScanFolders.FirstOrDefault(f => s.FolderId == f.Id)?.Path);
+        }
         public List<string> Refresh()
         {
             foreach (ScanFolder scanFolder in ScanFolders)
@@ -175,13 +221,12 @@ namespace MusicPlayer.Models
                 LoadFromFolder(scanFolder);
             }
 
-            List<Song> pendingDeleteSong =
-                Songs.Where(s => !System.IO.File.Exists(s.FilePath)
-                && Directory.Exists(ScanFolders.FirstOrDefault(f => s.FolderId == f.Id)?.Path)).ToList();
+            List<Song> shouldRemoveSong = Songs.Where(s => ShouldRemoveSong(s)).ToList();
+
 
             List<string> errorList = new List<string>();
 
-            foreach (Song song in pendingDeleteSong)
+            foreach (Song song in shouldRemoveSong)
             {
                 try
                 {
@@ -261,6 +306,30 @@ namespace MusicPlayer.Models
                 }
             }
 
+            return errorList;
+        }
+
+        public List<String> AddSingleSongFromList(string[] paths)
+        {
+
+            List<string> errorList = new List<string>();
+            foreach (string path in paths)
+            {
+                ScanFolder? scanFolder = FindContainingFolder(path);
+                try
+                {
+                    if (Songs.Any(s => string.Equals(s.FilePath, path, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        errorList.Add($"A song with path: {path} is already in your library");
+                        continue;
+                    }
+                    AddSongFromFile(path, scanFolder?.Id);
+                }
+                catch (Exception ex)
+                {
+                    errorList.Add($"Fail to add new song: {path}, Message: {ex.Message}");
+                }
+            }
             return errorList;
         }
     }
