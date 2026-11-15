@@ -15,6 +15,7 @@ namespace MusicPlayer.Models
         public bool IsListFinished => songs.Count != 0 ? currentIdx == songs.Count - 1 : false;
         private bool isShuffleEnable = false;
         public bool IsShuffleEnable => isShuffleEnable;
+        private Song? pendingRemoveSong = null;
 
         public enum RepeatMode
         {
@@ -39,18 +40,35 @@ namespace MusicPlayer.Models
 
             if (isShuffleEnable)
                 Shuffle();
+
+            pendingRemoveSong = null;
         }
         public void MoveNext()
         {
             if (songs.Count == 0)
                 return;
+            int lastIdx = currentIdx;
             currentIdx = (currentIdx + 1) % songs.Count;
+
+            if (pendingRemoveSong != null && currentIdx != lastIdx)
+            {
+                Remove(pendingRemoveSong);
+                pendingRemoveSong = null;
+            }
         }
         public void MovePrevious()
         {
             if (songs.Count == 0)
                 return;
+
+            int lastIdx = currentIdx;
             currentIdx = (currentIdx - 1 + songs.Count) % songs.Count;
+
+            if (pendingRemoveSong != null && currentIdx != lastIdx)
+            {
+                Remove(pendingRemoveSong);
+                pendingRemoveSong = null;
+            }
         }
         private void Shuffle()
         {
@@ -123,7 +141,10 @@ namespace MusicPlayer.Models
             Song currentSong = Current;
 
             if (song == currentSong)
+            {
+                pendingRemoveSong = currentSong;
                 return;
+            }
 
             songs.Remove(song);
             shuffleSongs.Remove(song);
