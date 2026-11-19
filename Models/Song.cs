@@ -16,6 +16,8 @@ namespace MusicPlayer.Models
         public const string ArtistsDefault = "Unknown";
         public const string? AlbumDefault = null;
 
+        private bool isFavorite;
+
         public Song() { }
         public Song(Song cpySong)
         {
@@ -30,6 +32,7 @@ namespace MusicPlayer.Models
             this.FileSize = cpySong.FileSize;
             this.LastModified = cpySong.LastModified;
             this.FolderId = cpySong.FolderId;
+            this.IsFavorite = cpySong.IsFavorite;
         }
         public void CpyFrom(Song cpySong)
         {
@@ -153,6 +156,17 @@ namespace MusicPlayer.Models
                 Cover = null;
             }
         }
+        public bool IsFavorite
+        {
+            get => isFavorite;
+            set
+            {
+                if (isFavorite == value) return;
+                isFavorite = value;
+                OnPropertyChanged();
+            }
+        }
+
         public void UnloadCoverArt() => Cover = null;
 
         public long Id { get; set; }

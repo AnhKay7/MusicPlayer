@@ -36,8 +36,10 @@ namespace MusicPlayer.Services
         public void CreateTables()
         {
             using var conn = OpenConnection();
+            using var transaction = conn.BeginTransaction();
 
             using var cmd = conn.CreateCommand();
+            cmd.Transaction = transaction;
             cmd.CommandText = """
                 CREATE TABLE IF NOT EXISTS ScanFolders (
                     Id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -61,6 +63,25 @@ namespace MusicPlayer.Services
                 );
                 """;
             cmd.ExecuteNonQuery();
+
+            using var checkCmd = conn.CreateCommand();
+            checkCmd.Transaction = transaction;
+            checkCmd.CommandText = """
+                SELECT COUNT(*) FROM pragma_table_info('Songs')
+                WHERE name = 'IsFavorite' COLLATE NOCASE;
+                """;
+
+            if ((long)checkCmd.ExecuteScalar()! == 0)
+            {
+                using var alterCmd = conn.CreateCommand();
+                alterCmd.Transaction = transaction;
+                alterCmd.CommandText = """
+                    ALTER TABLE Songs ADD COLUMN IsFavorite INTEGER NOT NULL DEFAULT 0;
+                    """;
+                alterCmd.ExecuteNonQuery();
+            }
+
+            transaction.Commit();
         }
 
         public void InsertSong(Song song, long? folderId = null)
@@ -102,7 +123,7 @@ namespace MusicPlayer.Services
 
             using var cmd = conn.CreateCommand();
             cmd.CommandText = """
-                SELECT Id, FilePath, Title, Artists, Album, DurationMs, FileSize, LastModified, DateAdded, FolderId
+                SELECT Id, FilePath, Title, Artists, Album, DurationMs, FileSize, LastModified, DateAdded, FolderId, IsFavorite
                     FROM Songs;
                 """;
 
@@ -133,6 +154,7 @@ namespace MusicPlayer.Services
                 if (!reader.IsDBNull(folderId))
                     song.FolderId = reader.GetInt64(folderId);
 
+                song.IsFavorite = reader.GetInt64(reader.GetOrdinal("IsFavorite")) == 1;
                 songs.Add(song);
                 Debug.Print($"Has read song: {song.Title}, Id:{song.Id}");
             }
@@ -257,6 +279,24 @@ namespace MusicPlayer.Services
                 Debug.Print($"Has read folder: {scanFolders.Last().Path}, Id:{scanFolders.Last().Id}");
             }
             return scanFolders;
+        }
+
+        public void SetFavorite(Song song, bool isFavorite)
+        {
+            using var conn = OpenConnection();
+            using var cmd = conn.CreateCommand();
+
+            cmd.CommandText = """
+                UPDATE Songs
+                SET IsFavorite = @favorite
+                WHERE Id = @id;
+                """;
+
+            cmd.Parameters.AddWithValue("@favorite", isFavorite ? 1 : 0);
+            cmd.Parameters.AddWithValue("@id", song.Id);
+
+            if (cmd.ExecuteNonQuery() != 1)
+                throw new InvalidOperationException("Song was not found in the library.");
         }
     }
 }
