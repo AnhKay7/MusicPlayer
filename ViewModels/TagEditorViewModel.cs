@@ -1,14 +1,9 @@
 ﻿using MusicPlayer.Models;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Windows;
 using System.Windows.Input;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using TagLib;
 
 namespace MusicPlayer.ViewModels
 {
@@ -18,19 +13,38 @@ namespace MusicPlayer.ViewModels
         public event EventHandler? SaveCompleted;
         public event EventHandler<string>? SaveFailed;
         public ICommand SaveCommand { get; }
+        public ICommand RemoveCoverCommand { get; }
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
         private Song originalSong;
         private MusicLibrary musicLibrary;
-        public TagEditorViewModel(Song song, MusicLibrary musicLibrary) 
+
+        private struct EditAbleTag
+        {
+            public string title;
+            public string album;
+            public string artists;
+            public string year;
+            public string genre;
+            public byte[]? coverData;
+        }
+
+        private EditAbleTag currentEditTag;
+        private EditAbleTag originalEditTag;
+
+        public TagEditorViewModel(Song song, MusicLibrary musicLibrary)
         {
             using var tagFile = TagLib.File.Create(song.FilePath);
 
             originalSong = song;
 
             this.musicLibrary = musicLibrary;
+
+            SaveCommand = new RelayCommand(Save, CanSave);
+
+            RemoveCoverCommand = new RelayCommand(RemoveCoverArt, CanRemoveCoverArt);
 
             Title = tagFile.Tag.Title ?? "";
 
@@ -42,20 +56,36 @@ namespace MusicPlayer.ViewModels
 
             Genre = tagFile.Tag.JoinedGenres ?? "";
 
-            SaveCommand = new RelayCommand(Save, CanSave);
+            try
+            {
+                IPicture[] pictures = tagFile.Tag.Pictures;
+                IPicture? coverArt =
+                    pictures.FirstOrDefault(p => p.Type == TagLib.PictureType.FrontCover) ??
+                    pictures.FirstOrDefault();
+                if (coverArt == null)
+                    CoverData = null;
+                else
+                    CoverData = coverArt.Data.Data;
+            }
+            catch
+            {
+                CoverData = null;
+            }
+
+            originalEditTag = currentEditTag;
         }
 
         private void Save()
         {
-            Debug.Print($"TagEditorViewModel: {Title}, {Artists}, {Album}, {Year}, {Genre}");
-
             try
             {
                 musicLibrary.WriteSongTags(
                         originalSong,
-                        title, artists, album,
-                        uint.TryParse(year, out uint parseYear) ? parseYear : 0,
-                        genre
+                        Title, Artists, Album,
+                        uint.TryParse(Year, out uint parseYear) ? parseYear : 0,
+                        Genre,
+                        CoverData,
+                        !AreByteArrayEqual(currentEditTag.coverData, originalEditTag.coverData)
                 );
                 SaveCompleted?.Invoke(this, EventArgs.Empty);
             }
@@ -69,79 +99,90 @@ namespace MusicPlayer.ViewModels
             }
             catch (Exception ex)
             {
-                SaveFailed?.Invoke(this, $"An unexpected error occurred: { ex.Message}");
+                SaveFailed?.Invoke(this, $"An unexpected error occurred: {ex.Message}");
             }
+        }
+        private static bool AreByteArrayEqual(byte[]? a, byte[]? b)
+        {
+            if (ReferenceEquals(a, b)) return true;
+            if (a is null || b is null) return false;
+
+            return a.AsSpan().SequenceEqual(b);
+        }
+        private bool HasChange(in EditAbleTag target, in EditAbleTag org)
+        {
+            return target.title != org.title
+                || target.artists != org.artists
+                || target.album != org.album
+                || target.year != org.year
+                || target.genre != org.genre
+                || !AreByteArrayEqual(target.coverData, org.coverData);
         }
         private bool CanSave()
         {
             if (Year != "" && !uint.TryParse(Year, out _))
                 return false;
 
-            return true;
-            //string origTitle = originalSong.Title ?? "";
-            //string origArtists = originalSong.Artists ?? ""; 
-            //string origAlbum = originalSong.Album ?? "";
-            ////string origGenre = originalSong.Genre ?? "";
-            ////string origYear = originalSong.Year == 0 ? "" : originalSong.Year.ToString();
-
-            //return Title != origTitle
-            //    || Artists != origArtists
-            //    || Album != origAlbum;
-            //    //|| Year != origYear
-            //    //|| Genre != origGenre;
+            return HasChange(currentEditTag, originalEditTag);
         }
-        private string title = "";
+        private void RemoveCoverArt() => CoverData = null;
+        private bool CanRemoveCoverArt()
+        {
+            return CoverData != null;
+        }
         public string Title
         {
-            get { return title; }
+            get => currentEditTag.title;
             set
             {
-                title = value;
+                currentEditTag.title = value;
                 OnPropertyChanged();
             }
         }
-        private string album = "";
         public string Album
         {
-            get { return album; }
+            get => currentEditTag.album;
             set
             {
-                album = value;
+                currentEditTag.album = value;
                 OnPropertyChanged();
             }
         }
-        private string artists = "";
         public string Artists
         {
-            get { return artists; }
+            get => currentEditTag.artists;
             set
             {
-                artists = value;
+                currentEditTag.artists = value;
                 OnPropertyChanged();
             }
         }
-
-        private string year = "";
         public string Year
         {
-            get { return year; }
+            get => currentEditTag.year;
             set
             {
-                year = value;
+                currentEditTag.year = value;
                 OnPropertyChanged();
             }
         }
-
-        private string genre = "";
         public string Genre
         {
-            get { return genre; }
+            get => currentEditTag.genre;
             set
             {
-                genre = value;
+                currentEditTag.genre = value;
                 OnPropertyChanged();
             }
         }
-
+        public byte[]? CoverData
+        {
+            get => currentEditTag.coverData;
+            set
+            {
+                currentEditTag.coverData = value;
+                OnPropertyChanged();
+            }
+        }
     }
 }
