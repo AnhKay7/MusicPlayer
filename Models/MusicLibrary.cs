@@ -138,7 +138,7 @@ namespace MusicPlayer.Models
         private ScanFolder? FindContainingFolder(string filePath)
         {
             if (!System.IO.File.Exists(filePath))
-            { 
+            {
                 Debug.Print($"MusicLibrary.AddScanFolder: Duong dan {filePath} khong ton tai");
                 return null;
             }
@@ -214,6 +214,12 @@ namespace MusicPlayer.Models
 
             return Directory.Exists(ScanFolders.FirstOrDefault(f => s.FolderId == f.Id)?.Path);
         }
+        private void RefreshSongTags(Song song)
+        {
+            Song updatedSong = ReadTagSong(song);
+            libraryDatabase.UpdateSong(updatedSong);
+            song.CpyFrom(updatedSong);
+        }
         public List<string> Refresh()
         {
             foreach (ScanFolder scanFolder in ScanFolders)
@@ -247,9 +253,7 @@ namespace MusicPlayer.Models
             {
                 try
                 {
-                    Song updatedSong = ReadTagSong(song);
-                    libraryDatabase.UpdateSong(updatedSong);
-                    song.CpyFrom(updatedSong);
+                    RefreshSongTags(song);
                 }
                 catch (Exception ex)
                 {
@@ -331,6 +335,26 @@ namespace MusicPlayer.Models
                 }
             }
             return errorList;
+        }
+
+        public void WriteSongTags(Song song, string title, string artists, string album, uint year, string genre)
+        {
+            using (var tagFile = TagLib.File.Create(song.FilePath))
+            {
+                tagFile.Tag.Title = string.IsNullOrWhiteSpace(title) ? null : title.Trim();
+
+                tagFile.Tag.Performers = artists.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+                tagFile.Tag.Album = string.IsNullOrWhiteSpace(album) ? null : album.Trim();
+
+                tagFile.Tag.Year = year;
+
+                tagFile.Tag.Genres = genre.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+                tagFile.Save();
+            }
+
+            RefreshSongTags(song);
         }
     }
 }

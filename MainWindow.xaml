@@ -108,6 +108,11 @@
                               Background="Transparent" BorderThickness="0" Foreground="White"
                               HorizontalContentAlignment="Stretch"
                               ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListView.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem x:Name="menuEditTags" Header="Edit tags" Click="menuEditTags_Click"></MenuItem>
+                            </ContextMenu>
+                        </ListView.ContextMenu>
                         <ListView.ItemTemplate>
                             <DataTemplate>
                                 <Grid>

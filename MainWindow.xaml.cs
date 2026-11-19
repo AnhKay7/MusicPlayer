@@ -1,6 +1,8 @@
 ﻿using Microsoft.Win32;
 using MusicPlayer.Models;
 using MusicPlayer.Services;
+using MusicPlayer.ViewModels;
+using MusicPlayer.Views;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
@@ -357,6 +359,28 @@ namespace MusicPlayer
                         playQueue.Remove(song);
                     }
                 }
+            }
+        }
+
+        private void menuEditTags_Click(object sender, RoutedEventArgs e)
+        {
+            if (lvSongs.SelectedItem is Song song)
+            {
+                TagEditorViewModel tagEditorViewModel;
+
+                try
+                {
+                    tagEditorViewModel = new TagEditorViewModel(song, musicLibrary);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error happen when reading {song.Title} tag. Message: {ex.Message}", "File Tag Reading Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                Window tagEditorWindow = new TagEditorWindow(tagEditorViewModel);
+                tagEditorWindow.Owner = this;
+                tagEditorWindow.ShowDialog();
             }
         }
     }
