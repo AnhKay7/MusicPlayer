@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Input;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MusicPlayer.ViewModels
 {
@@ -15,6 +16,7 @@ namespace MusicPlayer.ViewModels
     {
         public event PropertyChangedEventHandler? PropertyChanged;
         public event EventHandler? SaveCompleted;
+        public event EventHandler<string>? SaveFailed;
         public ICommand SaveCommand { get; }
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
@@ -57,9 +59,17 @@ namespace MusicPlayer.ViewModels
                 );
                 SaveCompleted?.Invoke(this, EventArgs.Empty);
             }
+            catch (IOException)
+            {
+                SaveFailed?.Invoke(this, "Unable to save changes. The file is currently in use.");
+            }
+            catch (UnauthorizedAccessException)
+            {
+                SaveFailed?.Invoke(this, "Unable to save changes. The file maybe be read-only or you lack write permissions.");
+            }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error happen when write new tag. Message: {ex.Message}", "File Tag Writing Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                SaveFailed?.Invoke(this, $"An unexpected error occurred: { ex.Message}");
             }
         }
         private bool CanSave()
