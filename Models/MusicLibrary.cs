@@ -25,6 +25,16 @@ namespace MusicPlayer.Models
             NotFound,
             ParentOfExisting
         }
+
+        public void ToggleFavorite(Song song)
+        {
+            bool newValue = !song.IsFavorite;
+
+            libraryDatabase.SetFavorite(song, newValue);
+
+            song.IsFavorite = newValue;
+        }
+
         private string EnsureTraillingSeparatorCharPath(string path)
         {
             if (string.IsNullOrEmpty(path))
