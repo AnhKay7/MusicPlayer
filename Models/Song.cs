@@ -47,6 +47,7 @@ namespace MusicPlayer.Models
             this.FileSize = cpySong.FileSize;
             this.LastModified = cpySong.LastModified;
             this.FolderId = cpySong.FolderId;
+            this.IsFavorite = cpySong.IsFavorite;
         }
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
