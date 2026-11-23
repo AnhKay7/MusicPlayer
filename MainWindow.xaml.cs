@@ -165,14 +165,18 @@ namespace MusicPlayer
             if (previousSong != null)
                 PlaySong(previousSong);
         }
+
         private void lvSongs_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (lvSongs.SelectedItem is Song song)
             {
-                playQueue.Load(musicLibrary.Songs, song);
+                var visibleSongs = songsView.Cast<Song>().ToList();
+
+                playQueue.Load(visibleSongs, song);
                 PlaySong(song);
             }
         }
+
         private void btnNextSong_Click(object sender, RoutedEventArgs e)
         {
             PlayNextSong();
