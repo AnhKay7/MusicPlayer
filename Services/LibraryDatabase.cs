@@ -57,10 +57,36 @@ namespace MusicPlayer.Services
                     FileSize        INTEGER NOT NULL,
                     LastModified    TEXT NOT NULL,
                     DateAdded       TEXT NOT NULL,
-                    FolderId        INTEGER REFERENCES ScanFolders(Id)
+                    FolderId        INTEGER REFERENCES ScanFolders(Id),
+                    PlayedCount INTEGER NOT NULL DEFAULT 0
                 );
                 """;
             cmd.ExecuteNonQuery();
+
+            // Bảng mới có sẵn PlayedCount. Thêm cột khi mở DB cũ.
+            cmd.CommandText = "PRAGMA table_info(Songs);";
+
+            using (var reader = cmd.ExecuteReader())
+            {
+                bool hasPlayedCount = false;
+
+                while (reader.Read())
+                {
+                    if (reader.GetString(1) == "PlayedCount")
+                    {
+                        hasPlayedCount = true;
+                        break;
+                    }
+                }
+
+                if (!hasPlayedCount)
+                {
+                    reader.Close();
+                    cmd.CommandText =
+                        "ALTER TABLE Songs ADD COLUMN PlayedCount INTEGER NOT NULL DEFAULT 0;";
+                    cmd.ExecuteNonQuery();
+                }
+            }
         }
 
         public void InsertSong(Song song, long? folderId = null)
@@ -102,7 +128,7 @@ namespace MusicPlayer.Services
 
             using var cmd = conn.CreateCommand();
             cmd.CommandText = """
-                SELECT Id, FilePath, Title, Artists, Album, DurationMs, FileSize, LastModified, DateAdded, FolderId
+                SELECT Id, FilePath, Title, Artists, Album, DurationMs, FileSize, LastModified, DateAdded, FolderId, PlayedCount
                     FROM Songs;
                 """;
 
@@ -133,12 +159,28 @@ namespace MusicPlayer.Services
                 if (!reader.IsDBNull(folderId))
                     song.FolderId = reader.GetInt64(folderId);
 
+                song.PlayedCount = reader.GetInt32(reader.GetOrdinal("PlayedCount"));
                 songs.Add(song);
                 Debug.Print($"Has read song: {song.Title}, Id:{song.Id}");
             }
 
             return songs;
         }
+        // Tăng và lấy số lượt mới trong cùng một câu SQL.
+        public int? IncrementPlayedCount(long songId)
+        {
+            using var conn = OpenConnection();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = """
+                UPDATE Songs
+                    SET PlayedCount = PlayedCount + 1
+                    WHERE Id = @songId
+                    RETURNING PlayedCount;
+                """;
+            cmd.Parameters.AddWithValue("@songId", songId);
+            return cmd.ExecuteScalar() is long playedCount ? checked((int)playedCount) : null;
+        }
+
         public void DeleteSong(Song song)
         {
             using var conn = OpenConnection();
