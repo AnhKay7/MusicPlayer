@@ -109,6 +109,13 @@ namespace MusicPlayer.Models
             }
 
         }
+        public void RecordListen(Song song)
+        {
+            // Cập nhật số lượt trên giao diện sau khi SQLite ghi xong.
+            if (libraryDatabase.IncrementPlayedCount(song.Id) is int playedCount)
+                song.PlayedCount = playedCount;
+        }
+
         private Song ReadTagSong(Song targetSong)
         {
             using var tagFile = TagLib.File.Create(targetSong.FilePath);

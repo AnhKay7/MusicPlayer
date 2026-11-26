@@ -56,28 +56,34 @@
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0" Background="#121212" CornerRadius="10" Padding="8"  Margin="8, 0, 0, 0">
-                <StackPanel>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"></ColumnDefinition>
-                            <ColumnDefinition Width="Auto"></ColumnDefinition>
-                            <ColumnDefinition Width="Auto"></ColumnDefinition>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Your Library" FontWeight="Bold" VerticalAlignment="Center" FontSize="18"></TextBlock>
-                        <Button x:Name="btnAdd" Content="+" Grid.Column="1" FontWeight="Bold" FontSize="18" VerticalAlignment="Center" Click="btnAdd_Click">
-                            <Button.ContextMenu>
-                                <ContextMenu>
-                                    <MenuItem x:Name="menuAddFolder" Header="Add new music folder" Click="menuAddFolder_Click"></MenuItem>
-                                    <MenuItem Header="Add new playlist"></MenuItem>
-                                    <MenuItem x:Name="menuManageScanFolder" Header="Manage scan folders" Click="menuManageScanFolder_Click"></MenuItem>
-                                    <MenuItem x:Name="menuAddSongs" Header="Add songs" Click="menuAddSongs_Click"></MenuItem>
-                                </ContextMenu>
-                            </Button.ContextMenu>
-                        </Button>
-                        <Button x:Name="btnRefresh" Content="⟳" Grid.Column="2" FontWeight="Bold" VerticalAlignment="Center" FontSize="18" Click="btnRefresh_Click"></Button>
-                    </Grid>
-                    <StackPanel Margin="0,8,0,0">
-                        <StackPanel Orientation="Horizontal">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0">
+                        <Grid>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"></ColumnDefinition>
+                                <ColumnDefinition Width="Auto"></ColumnDefinition>
+                                <ColumnDefinition Width="Auto"></ColumnDefinition>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Your Library" FontWeight="Bold" VerticalAlignment="Center" FontSize="18"></TextBlock>
+                            <Button x:Name="btnAdd" Content="+" Grid.Column="1" FontWeight="Bold" FontSize="18" VerticalAlignment="Center" Click="btnAdd_Click">
+                                <Button.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem x:Name="menuAddFolder" Header="Add new music folder" Click="menuAddFolder_Click"></MenuItem>
+                                        <MenuItem Header="Add new playlist"></MenuItem>
+                                        <MenuItem x:Name="menuManageScanFolder" Header="Manage scan folders" Click="menuManageScanFolder_Click"></MenuItem>
+                                        <MenuItem x:Name="menuAddSongs" Header="Add songs" Click="menuAddSongs_Click"></MenuItem>
+                                    </ContextMenu>
+                                </Button.ContextMenu>
+                            </Button>
+                            <Button x:Name="btnRefresh" Content="⟳" Grid.Column="2" FontWeight="Bold" VerticalAlignment="Center" FontSize="18" Click="btnRefresh_Click"></Button>
+                        </Grid>
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                             <Button Content="Playlist"/>
                             <Button Content="Artists"/>
                             <Button Content="Albums"/>
@@ -91,12 +97,47 @@
                                     Margin="0,0,5,0"/>
 
                             <Button x:Name="btnFavoritesOnly"
-                                        Content="Favorites"
-                                        Click="btnFavoritesOnly_Click"/>
+                                    Content="Favorites"
+                                    Click="btnFavoritesOnly_Click"/>
                         </StackPanel>
                     </StackPanel>
+                    <!-- Chừa phần còn lại cho danh sách cuộn. -->
+                    <Grid Grid.Row="1" Margin="0,25,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
 
-                </StackPanel>
+                        <TextBlock
+                            Text="Most Played"
+                            FontSize="16"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            Margin="5,0,0,10"/>
+
+                        <ListView
+                            x:Name="lvMostPlayed"
+                            Grid.Row="1"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Foreground="White"
+                            HorizontalContentAlignment="Stretch"
+                            ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="0,5">
+                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding Artists}" Foreground="Gray" FontSize="12" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding PlayedCount, StringFormat='Play count {0}'}" Foreground="Gray" FontSize="12"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+
+                        </ListView>
+                    </Grid>
+
+                </Grid>
             </Border>
 
             <Border Grid.Column="1" Background="#181818" CornerRadius="10" Margin="8, 0" Padding="8">

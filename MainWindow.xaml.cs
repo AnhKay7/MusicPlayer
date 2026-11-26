@@ -1,4 +1,5 @@
-﻿using Microsoft.Win32;
+﻿using Microsoft.Data.Sqlite;
+using Microsoft.Win32;
 using MusicPlayer.Models;
 using MusicPlayer.Services;
 using MusicPlayer.ViewModels;
@@ -57,6 +58,7 @@ namespace MusicPlayer
 
             audioPlayer.StateChanged += AudioPlayer_StateChanged;
             audioPlayer.SongEnded += SongEndedHandle;
+            audioPlayer.ListenThresholdReached += RecordCurrentSongListen;
 
             timer.Interval = TimeSpan.FromMilliseconds(500);
             timer.Tick += UpdateProgress;
@@ -67,6 +69,19 @@ namespace MusicPlayer
             btnRepeat.DataContext = playQueue;
 
             DataContext = musicLibrary;
+
+            // View riêng cho Most Played, chỉ lấy bài đã có lượt nghe.
+            var mostPlayed = new ListCollectionView(musicLibrary.Songs)
+            {
+                Filter = item => item is Song { PlayedCount: > 0 }
+            };
+            mostPlayed.SortDescriptions.Add(new SortDescription(nameof(Song.PlayedCount), ListSortDirection.Descending));
+            mostPlayed.SortDescriptions.Add(new SortDescription(nameof(Song.Title), ListSortDirection.Ascending));
+            mostPlayed.LiveFilteringProperties.Add(nameof(Song.PlayedCount));
+            mostPlayed.IsLiveFiltering = true;
+            mostPlayed.IsLiveSorting = true;
+            lvMostPlayed.ItemsSource = mostPlayed;
+
             lvSongs.ItemsSource = songsView;
             SetFavoritesOnly(false);
         }
@@ -100,6 +115,8 @@ namespace MusicPlayer
         #region Progress Bar
         private void UpdateProgress(object? sender, EventArgs e)
         {
+            // Dùng chung timer của thanh tiến độ để tính thời gian nghe.
+            audioPlayer.UpdateListeningProgress();
             TimeSpan position = audioPlayer.GetCurrentPosition;
             if (!sldProgress.IsUserDragging)
                 sldProgress.Value = position.TotalSeconds;
@@ -115,7 +132,31 @@ namespace MusicPlayer
         #endregion
 
         #region Play Song
-        private bool isAutoPlayEnabled = true;
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            base.OnClosing(e);
+            if (!e.Cancel)
+            {
+                // Tính nốt phần nghe sau tick cuối trước khi thoát.
+                audioPlayer.UpdateListeningProgress();
+                timer.Stop();
+            }
+        }
+
+        private void RecordCurrentSongListen(object? sender, EventArgs e)
+        {
+            if (currentSong == null)
+                return;
+
+            try
+            {
+                musicLibrary.RecordListen(currentSong);
+            }
+            catch (SqliteException ex)
+            {
+                MessageBox.Show(this, $"The play count could not be saved. {ex.Message}", "Play Count Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
         private void SongEndedHandle(object? sender, EventArgs e)
         {
             switch (playQueue.CurrentRepeatMode)

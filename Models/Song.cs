@@ -170,6 +170,21 @@ namespace MusicPlayer.Models
 
         public void UnloadCoverArt() => Cover = null;
 
+        // Báo cho Most Played khi số lượt thay đổi.
+        private int playedCount;
+        public int PlayedCount
+        {
+            get => playedCount;
+            set
+            {
+                if (playedCount == value)
+                    return;
+
+                playedCount = value;
+                OnPropertyChanged();
+            }
+        }
+
         public long Id { get; set; }
         public long FileSize { get; set; }
         public DateTime LastModified { get; set; } = DateTime.Today;
