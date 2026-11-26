@@ -88,6 +88,18 @@
                             <Button Content="Artists"/>
                             <Button Content="Albums"/>
                         </StackPanel>
+
+                        <StackPanel Orientation="Horizontal"
+                                     Margin="0,10,0,0">
+                            <Button x:Name="btnAllSongs"
+                                    Content="All Songs"
+                                    Click="btnAllSongs_Click"
+                                    Margin="0,0,5,0"/>
+
+                            <Button x:Name="btnFavoritesOnly"
+                                    Content="Favorites"
+                                    Click="btnFavoritesOnly_Click"/>
+                        </StackPanel>
                     </StackPanel>
                     <!-- Chừa phần còn lại cho danh sách cuộn. -->
                     <Grid Grid.Row="1" Margin="0,25,0,0">
@@ -141,6 +153,7 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="80"/>
+                            <ColumnDefinition Width="45"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Song name"></TextBlock>
                         <TextBlock Grid.Column="1" Text="Artist"></TextBlock>
@@ -148,7 +161,6 @@
                         <TextBlock Grid.Column="3" Text="⌚"></TextBlock>
                     </Grid>
                     <ListView x:Name="lvSongs" MouseDoubleClick="lvSongs_MouseDoubleClick" Grid.Row="1" 
-                              ItemsSource="{Binding Songs}"
                               Background="Transparent" BorderThickness="0" Foreground="White"
                               HorizontalContentAlignment="Stretch"
                               ScrollViewer.HorizontalScrollBarVisibility="Disabled">
@@ -165,11 +177,40 @@
                                         <ColumnDefinition Width="*"></ColumnDefinition>
                                         <ColumnDefinition Width="*"></ColumnDefinition>
                                         <ColumnDefinition Width="80"></ColumnDefinition>
+                                        <ColumnDefinition Width="45"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Text="{Binding Title}" TextTrimming="CharacterEllipsis"></TextBlock>
                                     <TextBlock Grid.Column="1" Text="{Binding Artists}" TextTrimming="CharacterEllipsis"></TextBlock>
                                     <TextBlock Grid.Column="2" Text="{Binding DateAdded, StringFormat=dd/MM/yyyy}" TextTrimming="CharacterEllipsis"></TextBlock>
                                     <TextBlock Grid.Column="3" Text="{Binding Duration, StringFormat=m\\:ss}" TextTrimming="CharacterEllipsis"></TextBlock>
+
+                                    <Button Grid.Column="4"
+                                            FontSize="14"
+                                            Width="28"
+                                            Height="28"
+                                            Padding="0"
+                                            Margin="0"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Top"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Top"
+                                            Click="Favorite_Click"
+                                            ToolTip="Yêu thích">
+                                        <Button.Style>
+                                            <Style TargetType="Button"
+                                                    BasedOn="{StaticResource {x:Type Button}}">
+                                                <Setter Property="Content" Value="♡"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsFavorite}"
+                                                                 Value="True">
+                                                        <Setter Property="Content" Value="♥"/>
+                                                        <Setter Property="Foreground" Value="#FF4081"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
                                 </Grid>
                             </DataTemplate>
                         </ListView.ItemTemplate>

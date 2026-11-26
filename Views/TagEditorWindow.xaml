@@ -9,7 +9,7 @@
         Background="Black"
         Foreground="White"
         Title="Edit tags"
-        Width="480" SizeToContent="Height"
+        Width="640" SizeToContent="Height"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner">
     <Window.Resources>
@@ -71,29 +71,56 @@
                     <ColumnDefinition Width="Auto"></ColumnDefinition>
                     <ColumnDefinition Width="*"></ColumnDefinition>
                 </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"></RowDefinition>
-                    <RowDefinition Height="Auto"></RowDefinition>
-                    <RowDefinition Height="Auto"></RowDefinition>
-                    <RowDefinition Height="Auto"></RowDefinition>
-                    <RowDefinition Height="Auto"></RowDefinition>
-                </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="Title"></TextBlock>
-                <TextBox   Grid.Row="0" Grid.Column="1" Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                <!--Cot trai: anh bia + 2 nut doi/xoa anh-->
+                <StackPanel Grid.Column="0" Width="160" Margin="0, 4, 12, 4" VerticalAlignment="Top">
+                    <Grid Height="160">
+                        <Border Background="#2A2A2A" CornerRadius="8">
+                            <Viewbox>
+                                <TextBlock Text="🎵" Margin="10"></TextBlock>
+                            </Viewbox>
+                        </Border>
+                        <Image Source="{Binding CoverData}" Stretch="UniformToFill"></Image>
+                    </Grid>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0, 8, 0, 0">
+                        <!--CHANGE: mo hop thoai chon file -> viec cua View (code-behind)-->
+                        <Button x:Name="btnChangeCover" Content="CHANGE" Padding="10, 6" FontSize="11"
+                                Click="btnChangeCover_Click"></Button>
+                        <!--REMOVE: chi doi du lieu -> Command trong ViewModel-->
+                        <Button Content="REMOVE" Padding="10, 6" FontSize="11"
+                                Command="{Binding RemoveCoverCommand}"></Button>
+                    </StackPanel>
+                </StackPanel>
 
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Artist"></TextBlock>
-                <TextBox   Grid.Row="1" Grid.Column="1" Text="{Binding Artists, UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                <Grid Grid.Column="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"></ColumnDefinition>
+                        <ColumnDefinition Width="*"></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"></RowDefinition>
+                        <RowDefinition Height="Auto"></RowDefinition>
+                        <RowDefinition Height="Auto"></RowDefinition>
+                        <RowDefinition Height="Auto"></RowDefinition>
+                        <RowDefinition Height="Auto"></RowDefinition>
+                    </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="Album"></TextBlock>
-                <TextBox   Grid.Row="2" Grid.Column="1" Text="{Binding Album, UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Title"></TextBlock>
+                    <TextBox   Grid.Row="0" Grid.Column="1" Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}"></TextBox>
 
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="Year"></TextBlock>
-                <TextBox   Grid.Row="3" Grid.Column="1" Width="100" HorizontalAlignment="Left"
-                           Text="{Binding Year, UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Artist"></TextBlock>
+                    <TextBox   Grid.Row="1" Grid.Column="1" Text="{Binding Artists, UpdateSourceTrigger=PropertyChanged}"></TextBox>
 
-                <TextBlock Grid.Row="4" Grid.Column="0" Text="Genre"></TextBlock>
-                <TextBox   Grid.Row="4" Grid.Column="1" Text="{Binding Genre, UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Album"></TextBlock>
+                    <TextBox   Grid.Row="2" Grid.Column="1" Text="{Binding Album, UpdateSourceTrigger=PropertyChanged}"></TextBox>
+
+                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Year"></TextBlock>
+                    <TextBox   Grid.Row="3" Grid.Column="1" Width="100" HorizontalAlignment="Left"
+                               Text="{Binding Year, UpdateSourceTrigger=PropertyChanged}"></TextBox>
+
+                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Genre"></TextBlock>
+                    <TextBox   Grid.Row="4" Grid.Column="1" Text="{Binding Genre, UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                </Grid>
             </Grid>
         </Border>
 

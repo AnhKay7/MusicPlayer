@@ -1,13 +1,8 @@
 ﻿using MusicPlayer.Services;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
-using System.Windows;
 using TagLib;
-using static MusicPlayer.Models.MusicLibrary;
 
 namespace MusicPlayer.Models
 {
@@ -25,6 +20,16 @@ namespace MusicPlayer.Models
             NotFound,
             ParentOfExisting
         }
+
+        public void ToggleFavorite(Song song)
+        {
+            bool newValue = !song.IsFavorite;
+
+            libraryDatabase.SetFavorite(song, newValue);
+
+            song.IsFavorite = newValue;
+        }
+
         private string EnsureTraillingSeparatorCharPath(string path)
         {
             if (string.IsNullOrEmpty(path))
@@ -344,7 +349,10 @@ namespace MusicPlayer.Models
             return errorList;
         }
 
-        public void WriteSongTags(Song song, string title, string artists, string album, uint year, string genre)
+        public void WriteSongTags(
+            Song song, 
+            string title, string artists, string album, uint year, string genre, 
+            byte[]? coverData, bool coverChanged)
         {
             using (var tagFile = TagLib.File.Create(song.FilePath))
             {
@@ -357,6 +365,19 @@ namespace MusicPlayer.Models
                 tagFile.Tag.Year = year;
 
                 tagFile.Tag.Genres = genre.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+                if (coverChanged && coverData != null)
+                {
+                    var frontCover = new TagLib.Picture(new TagLib.ByteVector(coverData));
+                    frontCover.Type = TagLib.PictureType.FrontCover;
+
+                    tagFile.Tag.Pictures = new IPicture[] { frontCover };
+                }
+                
+                if (coverChanged && coverData == null)
+                {
+                    tagFile.Tag.Pictures = new IPicture[0];
+                }
 
                 tagFile.Save();
             }

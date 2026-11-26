@@ -33,12 +33,26 @@ namespace MusicPlayer
         private PlayQueue playQueue = new PlayQueue();
         private Song? currentSong;
         private double lastVolumeValue = 0.5;
+        private readonly ICollectionView songsView;
+        private bool favoritesOnly;
         #endregion
 
         #region Init
         public MainWindow()
         {
             InitializeComponent();
+
+            songsView = CollectionViewSource.GetDefaultView(
+                musicLibrary.Songs);
+
+            songsView.Filter = item =>
+            {
+                if (item is not Song song)
+                    return false;
+
+                return !favoritesOnly || song.IsFavorite;
+            };
+
 
             musicLibrary.Songs.CollectionChanged += Songs_CollectionChanged;
 
@@ -67,6 +81,9 @@ namespace MusicPlayer
             mostPlayed.IsLiveFiltering = true;
             mostPlayed.IsLiveSorting = true;
             lvMostPlayed.ItemsSource = mostPlayed;
+
+            lvSongs.ItemsSource = songsView;
+            SetFavoritesOnly(false);
         }
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
@@ -189,14 +206,18 @@ namespace MusicPlayer
             if (previousSong != null)
                 PlaySong(previousSong);
         }
+
         private void lvSongs_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (lvSongs.SelectedItem is Song song)
             {
-                playQueue.Load(musicLibrary.Songs, song);
+                var visibleSongs = songsView.Cast<Song>().ToList();
+
+                playQueue.Load(visibleSongs, song);
                 PlaySong(song);
             }
         }
+
         private void btnNextSong_Click(object sender, RoutedEventArgs e)
         {
             PlayNextSong();
@@ -423,6 +444,55 @@ namespace MusicPlayer
                 tagEditorWindow.Owner = this;
                 tagEditorWindow.ShowDialog();
             }
+        }
+
+        private void Favorite_Click(
+            object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button &&
+                button.DataContext is Song song)
+            {
+                try
+                {
+                    musicLibrary.ToggleFavorite(song);
+                    if (favoritesOnly)
+                        songsView.Refresh();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message,
+                        "Favorite Error");
+                }
+            }
+        }
+
+        private void SetFavoritesOnly(bool value)
+        {
+            if (favoritesOnly != value)
+            {
+                favoritesOnly = value;
+                songsView.Refresh();
+            }
+
+            btnAllSongs.Background = favoritesOnly
+                ? Brushes.Transparent
+                : Brushes.DarkSlateGray;
+
+            btnFavoritesOnly.Background = favoritesOnly
+                ? Brushes.DarkSlateGray
+                : Brushes.Transparent;
+        }
+
+        private void btnAllSongs_Click(
+            object sender, RoutedEventArgs e)
+        {
+            SetFavoritesOnly(false);
+        }
+
+        private void btnFavoritesOnly_Click(
+            object sender, RoutedEventArgs e)
+        {
+            SetFavoritesOnly(true);
         }
     }
 }

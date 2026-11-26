@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
+using Microsoft.Data.Sqlite;
 using MusicPlayer.Models;
 using System;
 using System.Collections.Generic;
@@ -36,8 +36,10 @@ namespace MusicPlayer.Services
         public void CreateTables()
         {
             using var conn = OpenConnection();
+            using var transaction = conn.BeginTransaction();
 
             using var cmd = conn.CreateCommand();
+            cmd.Transaction = transaction;
             cmd.CommandText = """
                 CREATE TABLE IF NOT EXISTS ScanFolders (
                     Id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -58,35 +60,40 @@ namespace MusicPlayer.Services
                     LastModified    TEXT NOT NULL,
                     DateAdded       TEXT NOT NULL,
                     FolderId        INTEGER REFERENCES ScanFolders(Id),
-                    PlayedCount INTEGER NOT NULL DEFAULT 0
+                    PlayedCount     INTEGER NOT NULL DEFAULT 0,
+                    IsFavorite      INTEGER NOT NULL DEFAULT 0
                 );
                 """;
             cmd.ExecuteNonQuery();
 
-            // Bảng mới có sẵn PlayedCount. Thêm cột khi mở DB cũ.
-            cmd.CommandText = "PRAGMA table_info(Songs);";
+            using var checkCmd = conn.CreateCommand();
+            checkCmd.Transaction = transaction;
+            checkCmd.CommandText = """
+                SELECT EXISTS (
+                    SELECT 1 FROM pragma_table_info('Songs')
+                    WHERE name = @columnName COLLATE NOCASE
+                );
+                """;
+            var columnName = checkCmd.Parameters.AddWithValue("@columnName", "PlayedCount");
 
-            using (var reader = cmd.ExecuteReader())
+            if ((long)checkCmd.ExecuteScalar()! == 0)
             {
-                bool hasPlayedCount = false;
-
-                while (reader.Read())
-                {
-                    if (reader.GetString(1) == "PlayedCount")
-                    {
-                        hasPlayedCount = true;
-                        break;
-                    }
-                }
-
-                if (!hasPlayedCount)
-                {
-                    reader.Close();
-                    cmd.CommandText =
-                        "ALTER TABLE Songs ADD COLUMN PlayedCount INTEGER NOT NULL DEFAULT 0;";
-                    cmd.ExecuteNonQuery();
-                }
+                cmd.CommandText = """
+                    ALTER TABLE Songs ADD COLUMN PlayedCount INTEGER NOT NULL DEFAULT 0;
+                    """;
+                cmd.ExecuteNonQuery();
             }
+
+            columnName.Value = "IsFavorite";
+            if ((long)checkCmd.ExecuteScalar()! == 0)
+            {
+                cmd.CommandText = """
+                    ALTER TABLE Songs ADD COLUMN IsFavorite INTEGER NOT NULL DEFAULT 0;
+                    """;
+                cmd.ExecuteNonQuery();
+            }
+
+            transaction.Commit();
         }
 
         public void InsertSong(Song song, long? folderId = null)
@@ -128,7 +135,7 @@ namespace MusicPlayer.Services
 
             using var cmd = conn.CreateCommand();
             cmd.CommandText = """
-                SELECT Id, FilePath, Title, Artists, Album, DurationMs, FileSize, LastModified, DateAdded, FolderId, PlayedCount
+                SELECT Id, FilePath, Title, Artists, Album, DurationMs, FileSize, LastModified, DateAdded, FolderId, PlayedCount, IsFavorite
                     FROM Songs;
                 """;
 
@@ -160,6 +167,7 @@ namespace MusicPlayer.Services
                     song.FolderId = reader.GetInt64(folderId);
 
                 song.PlayedCount = reader.GetInt32(reader.GetOrdinal("PlayedCount"));
+                song.IsFavorite = reader.GetInt64(reader.GetOrdinal("IsFavorite")) == 1;
                 songs.Add(song);
                 Debug.Print($"Has read song: {song.Title}, Id:{song.Id}");
             }
@@ -299,6 +307,24 @@ namespace MusicPlayer.Services
                 Debug.Print($"Has read folder: {scanFolders.Last().Path}, Id:{scanFolders.Last().Id}");
             }
             return scanFolders;
+        }
+
+        public void SetFavorite(Song song, bool isFavorite)
+        {
+            using var conn = OpenConnection();
+            using var cmd = conn.CreateCommand();
+
+            cmd.CommandText = """
+                UPDATE Songs
+                SET IsFavorite = @favorite
+                WHERE Id = @id;
+                """;
+
+            cmd.Parameters.AddWithValue("@favorite", isFavorite ? 1 : 0);
+            cmd.Parameters.AddWithValue("@id", song.Id);
+
+            if (cmd.ExecuteNonQuery() != 1)
+                throw new InvalidOperationException("Song was not found in the library.");
         }
     }
 }
